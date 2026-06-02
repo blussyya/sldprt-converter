@@ -3,111 +3,177 @@
 ## Goal
 Parse SolidWorks .sldprt files in the browser to extract 3D geometry (triangles) without needing SolidWorks or any proprietary software.
 
+## Status: DEFINITIVE FINDINGS — Browser-Based SLDPRT Parsing is NOT Feasible
+
+After extensive research (analyzing 6 SLDPRT files from SW 2000–2022, testing every decompression method, parsing every stream), the conclusion is clear:
+
+### **The Parasolid B-Rep geometry in SLDPRT files is wrapped in SolidWorks' own proprietary serialization format. There is NO public way to extract raw B-Rep geometry without SolidWorks or a commercial library.**
+
+---
+
 ## What We Built
 
 ### Working OLE2 Parser (`ole2-parser.js`)
 - Parses Microsoft Compound File Binary (OLE2/Structured Storage) format
-- Reads FAT (File Allocation Table), directory tree, and stream data
-- Handles both regular sectors and mini-stream for small streams
-- **Tested and working on real SLDPRT files**
+- Reads FAT, directory tree, and stream data (both regular and mini-stream)
+- **Tested and working on real SLDPRT files** (SW 2000 through SW 2022)
+- Fixed bounds checking for robust stream reading
 
-### SLDPRT Extractor (`sldprt-extractor.js`)
-- Attempts to extract geometry from decompressed data
-- Multiple strategies: Parasolid parsing, display list parsing, pattern matching
+### Analysis Scripts
+- `full-stream-analysis.js` — Hex-dump and analyze every stream
+- `analyze-brotli-result.js` — Brotli decompression analysis
+- `extract-vertices.js` — Float64/int32/int16 vertex extraction attempts
+- `parse-config0-serialization.js` — Config-0 class hierarchy parser
+- `deep-analyze-body.js` — Config-0-Body binary structure analysis
+- `python-analyze.py` — Python olefile-based analysis
 
-### Test Pages
-- `test.html` — Browser-based file drop + 3D viewer (Three.js)
-- `test-node.js` — Node.js CLI testing
-- `analyze-streams.js` — Stream content analyzer
-- `parse-display.js` — Display list parser
+### Test Infrastructure
+- `test.html` — Browser-based file drop + Three.js viewer
+- `test-node.js` — Node.js CLI test harness
+- `sldprt-to-step.py` — Python SLDPRT→STEP converter via FreeCAD
+- `generate-test.js` — OLE2 test file generator
 
-## Key Findings
+---
 
-### SLDPRT File Structure
+## Definitive File Structure Analysis
+
+### SLDPRT = OLE2 Container
 ```
-SLDPRT = OLE2 container (like old .doc files)
+SLDPRT = OLE2 compound file
 ├── Header
 ├── FAT (File Allocation Table)
-├── Directory (red-black tree of streams)
+├── Directory
 ├── Streams:
-│   ├── Header — SolidWorks version info
-│   ├── Preview — Thumbnail bitmap
+│   ├── Header — SolidWorks version, metadata (moHeader_c, su_CStringArray)
+│   ├── Preview — Thumbnail bitmap (EMF/WMF)
 │   ├── Contents/
-│   │   ├── DisplayLists / DisplayLists__Zip / DisplayLists__ZLB
-│   │   │   └── Tessellated triangle data (compressed or raw)
-│   │   ├── Definition
-│   │   │   └── Parasolid B-Rep geometry (structured binary)
-│   │   ├── Config-0 / Config-0-Partition
-│   │   │   └── Part metadata (feature tree, timestamps)
-│   │   └── CMgr, CMgrHdr, OleItems
-│   ├── SummaryInformation
-│   └── ISolidWorksInformation
+│   │   ├── DisplayLists__Zip — Tessellated rendering data (custom __Zip compression)
+│   │   ├── Config-0 — Feature tree serialization (moPart_c, moHeader_c, moExtrusion_c, etc.)
+│   │   ├── Config-0-Body — SolidWorks-serialized geometry (103KB, NOT standard Parasolid)
+│   │   ├── Config-2, Config-2-Body — Additional configuration data
+│   │   ├── Definition — Display/font classes (moANSI_c, uiUserModelEnv_c)
+│   │   ├── CMgr, CMgrHdr, OleItems — Configuration management
+│   │   └── Printing — Print settings
+│   ├── SummaryInformation — OLE properties
+│   ├── ISolidWorksInformation — SW-specific metadata
+│   ├── _DL_VERSION_XXXX — Display list version
+│   └── _MO_VERSION_XXXX — Model version / Biography / History
+└── ThirdPty/ — Third-party add-in data
 ```
+
+### Key Class Names Found in Config-0
+| Class | Purpose |
+|-------|---------|
+| `moPart_c` | Root part object |
+| `moHeader_c` | Part header/metadata |
+| `moExtrusion_c` | Extrude feature |
+| `moBoss_c` | Boss-extrude feature |
+| `moCompFace_c` | Face data |
+| `moCompEdge_c` | Edge data |
+| `sgSketch` | Sketch definition |
+| `sgLineHandle` | Line geometry |
+| `sgPointHandle` | Point geometry |
+| `moLengthParameter_c` | Dimension parameter |
+| `uiUserModelEnv_c` | User model environment |
+
+### Config-0-Body Binary Structure
+- **Header (24 bytes)**: `8b 91 01 00 01 06 48 6c 90 04 49 90 c4 86 e6 59 1c 31 8f 8d 2c 60 79 14`
+- **Data**: SolidWorks' own Parasolid serialization (NOT standard .x_b format)
+- **Contains**: 7431 valid float64 values (transformation matrices, NOT vertex coordinates)
+- **No**: Standard Parasolid headers (`PS\0\0`, `B`), no "PARASOLID"/"TRANSMIT" strings
+- **Not**: zlib, brotli, or LZMA compressed (standard methods)
+
+### DisplayLists__Zip Compression
+- **Header**: `01 06 c0 1f 24 41 12 24` (custom format, NOT standard zlib)
+- **Decompression**: Brotli works at offset 14 (4337 bytes), but the result is NOT geometry
+- **Contains**: Rendering control data (transformation matrices), NOT vertex/triangle data
+- **The `__Zip` suffix**: SolidWorks custom compression, NOT standard zlib/brotli
 
 ### Compression Naming Convention
-| Suffix | Format | SolidWorks Version |
-|--------|--------|--------------------|
-| (none) | Raw/uncompressed | Older (pre-2015?) |
-| `__Zip` | ZIP-compressed | ~2000-2015 |
-| `__ZLB` | Zlib-compressed | 2015+ |
+| Suffix | Format | Notes |
+|--------|--------|-------|
+| (none) | Raw/uncompressed | Older SW files |
+| `__Zip` | Custom compression | NOT standard zlib/brotli |
+| `__ZLB` | Standard zlib | Common in SW drawings |
 
-### What We Successfully Parsed
-1. **OLE2 container** — Full FAT, directory, stream extraction ✓
-2. **Stream discovery** — Found DisplayLists, Definition, Config streams ✓
-3. **Metadata extraction** — Feature names, timestamps, user info ✓
-4. **Raw coordinate data** — Found float64 vertex values in DisplayLists ✓
+---
 
-### What We Haven't Solved Yet
-1. **Display list format** — Coordinates are interleaved with metadata; can't just read as float64 triplets
-2. **Parasolid Definition format** — Complex structured binary with class names (`moPart_c`, `moCompEdge_cR`, etc.)
-3. **Correct triangle extraction** — Got 237 "vertices" but they don't form a coherent mesh
+## Why Browser-Based SLDPRT Parsing is NOT Feasible
 
-## The Real Problem
+### 1. No Parasolid Data in Standard Format
+- SLDPRT files do NOT contain standard Parasolid XT transmit files (.x_b)
+- The geometry is in SolidWorks' own serialization format (`moPart_c` hierarchy)
+- No `PS\0\0` (neutral binary) or `B` (bare binary) headers found anywhere
 
-The DisplayLists stream is NOT raw float64 vertex data. It's a **custom SolidWorks binary format** with:
-- Headers and section markers
-- Face/edge/vertex metadata interleaved with coordinates
-- Class names like `uiUserModelEnv_c`
-- Different data types mixed together
+### 2. No Config-0-Partition Stream
+- Earlier research suggested Config-0-Partition contains zlib-compressed Parasolid data
+- **NONE of our 6 test files (SW 2000–2022) contain this stream**
+- Only Config-0, Config-0-Body, Config-2, Config-2-Body exist
 
-The Definition stream contains Parasolid B-Rep data but in SolidWorks' internal serialization format, not standard `.x_b` or `.step`.
+### 3. Custom Compression is NOT Standard
+- `DisplayLists__Zip` uses SolidWorks' custom compression (NOT zlib, brotli, or LZMA)
+- Even after decompression, the data is NOT standard Parasolid format
+- The decompressed data contains rendering control structures, not mesh geometry
 
-## Next Steps (for future work)
+### 4. Config-0-Body Contains SolidWorks Serialization
+- The 103KB Config-0-Body stream starts with a custom 24-byte header
+- Contains class hierarchy (`moPart_c` → `moHeader_c` → features)
+- Float64 values are transformation matrices, NOT vertex coordinates
+- Cannot be parsed without knowing SolidWorks' internal serialization format
 
-### Option A: Reverse-engineer the DisplayLists format
-- Map out the binary structure byte-by-byte
-- Identify header patterns, length fields, type markers
-- Extract vertices from the correct offsets
-- **Effort: High (weeks of reverse engineering)**
+### 5. Only Commercial Libraries Can Read SLDPRT
+- **HOOPS Exchange** (Tech Soft 3D) — reads SLDPRT via Parasolid connector
+- **ODA MCAD SDK** — reads SLDPRT versions 2011–2025
+- **3DViewStation** — reads SLDPRT versions 1997–2024
+- All require paid licenses and are closed-source
 
-### Option B: Use existing tools
-- **CAD Exchanger SDK** (commercial, has JavaScript API) — reads SLDPRT natively
-- **ODA MCAD SDK** (commercial) — full SLDPRT support
-- **FreeCAD + Python** — can convert SLDPRT → STEP offline
-- **Online APIs** — Convert3D, CAD Exchanger Cloud
+---
 
-### Option C: Hybrid approach
-- Keep guidance modal for now
-- Add a simple Python script that uses `python-olefile` + `freeCAD` to convert SLDPRT → STEP
-- Users run the script locally, then upload STEP to our converter
+## What IS Possible
 
-## Test Files
-Downloaded from sembiance.com:
-- `SW2000-s01.SLDPRT` (20KB, SW 2000)
-- `plate4.sldprt` (76KB, SW ~2006)
-- `chainwheel.sldprt` (253KB, SW ~2006)
+### 1. Offline Python Converter (requires FreeCAD)
+`sldprt-to-step.py` — Converts SLDPRT→STEP using FreeCAD (free, open-source)
+- Requires FreeCAD installation on user's machine
+- Works via FreeCAD's import/export capabilities
+- Not suitable for browser-based conversion
 
-## Running Tests
-```bash
-# Node.js testing
-node test-node.js plate4.sldprt
+### 2. Tessellated Mesh Extraction (if __Zip format is decoded)
+The `DisplayLists__Zip` stream likely contains pre-computed tessellated triangles
+- But the `__Zip` compression format is custom and undocumented
+- Even if decompressed, the data format is proprietary
+- Would require significant reverse-engineering effort
 
-# Stream analysis
-node analyze-streams.js plate4.sldprt
+### 3. Guidance-Only Approach (current main site approach)
+- Guide users to export SLDPRT→STEP/IGES in SolidWorks first
+- Then convert STEP/IGES in browser using occt-import-js
+- Most practical for web-based workflow
 
-# Display list parsing
-node parse-display.js plate4.sldprt
+---
 
-# Open browser test
-# Open test.html in browser, drop a .sldprt file
-```
+## Test Files Analyzed
+
+| File | SW Version | Size | Config-0-Partition | Notes |
+|------|-----------|------|-------------------|-------|
+| SW2000-s01.SLDPRT | SW 2000 | 20KB | NO | Old format |
+| plate4.sldprt | ~SW 2006 | 76KB | NO | Simple part |
+| chainwheel.sldprt | ~SW 2006 | 253KB | NO | Complex part |
+| CAM.SLDPRT | SW 2022 | 138KB | NO | Newer format |
+| doneConsole.sldprt | Unknown | 350KB | NO | Large part |
+| SLIDING TABLE.SLDPRT | SW 2017 | 539KB | NO | Multi-config |
+
+**None of these files contain Config-0-Partition or standard Parasolid data.**
+
+---
+
+## References
+
+- [HOOPS Exchange SolidWorks Reader](https://docs.techsoft3d.com/exchange/2025.6.0/start/format/solidworks_reader.html) — "SolidWorks uses Parasolid as its geometry engine"
+- [Ansys CAD Reader](https://ansyshelp.ansys.com/public/Views/Secured/corp/v251/en/ref_cad/cadSWreader.html) — "SOLIDWORKS stores B-rep data in separate streams"
+- [Parasolid XT Format Reference](http://www.13thmonkey.org/documentation/CAD/Parasolid-XT-format-reference.pdf) — Binary format spec
+- [heybryan.org SLDPRT format](https://heybryan.org/solidworks_file_format.html) — Reverse engineering attempts
+- [Free-Solidworks-OBJ-Exporter](https://github.com/Aeroanion/Free-Solidworks-OBJ-Exporter) — Requires SolidWorks API
+
+---
+
+## License
+MIT

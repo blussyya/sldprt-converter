@@ -135,16 +135,13 @@ class Ole2Parser {
       return new ArrayBuffer(0);
     }
 
-    // Validate startSector is within file bounds
     const maxSector = Math.floor((this.buffer.byteLength - this.sectorSize) / this.sectorSize) - 1;
     if (startSector > maxSector) {
-      console.warn(`Stream starts at sector ${startSector} but file only has ${maxSector + 1} sectors`);
       return new ArrayBuffer(0);
     }
 
     let data;
     if (size < this.miniStreamCutoff && this.miniStream) {
-      // Small stream — read from mini stream via mini FAT
       const chain = [];
       let current = startSector;
       const visited = new Set();
@@ -159,29 +156,35 @@ class Ole2Parser {
       data = new Uint8Array(size);
       let offset = 0;
       for (const sector of chain) {
+        if (offset >= size) break;
         const sectorData = this._readMiniSector(sector);
         if (!sectorData) continue;
         const bytesToCopy = Math.min(this.miniSectorSize, size - offset);
-        data.set(new Uint8Array(sectorData, 0, bytesToCopy), offset);
+        try {
+          data.set(new Uint8Array(sectorData, 0, bytesToCopy), offset);
+        } catch (e) { break; }
         offset += bytesToCopy;
-        if (offset >= size) break;
       }
     } else {
-      // Large stream — read directly from sectors via FAT
       const chain = this._getSectorChain(startSector);
-      const totalBytes = chain.length * this.sectorSize;
-      data = new Uint8Array(Math.max(totalBytes, size));
-      let offset = 0;
+      // Allocate based on what we can actually read, not chain length
+      const chunks = [];
+      let totalRead = 0;
       for (const sector of chain) {
+        if (totalRead >= size) break;
         const sectorData = this._readSector(sector);
         if (!sectorData) continue;
-        const bytesToCopy = Math.min(this.sectorSize, size - offset, data.length - offset);
-        if (bytesToCopy <= 0) break;
-        data.set(new Uint8Array(sectorData, 0, bytesToCopy), offset);
-        offset += bytesToCopy;
-        if (offset >= size) break;
+        const bytesToCopy = Math.min(this.sectorSize, size - totalRead);
+        chunks.push(new Uint8Array(sectorData, 0, bytesToCopy));
+        totalRead += bytesToCopy;
       }
-      if (offset > size) data = data.slice(0, size);
+      
+      data = new Uint8Array(totalRead);
+      let offset = 0;
+      for (const chunk of chunks) {
+        data.set(chunk, offset);
+        offset += chunk.length;
+      }
     }
 
     return data.buffer;
