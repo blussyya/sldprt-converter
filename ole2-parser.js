@@ -169,13 +169,17 @@ class Ole2Parser {
     } else {
       // Large stream — read directly from sectors via FAT
       const chain = this._getSectorChain(startSector);
-      data = new Uint8Array(chain.length * this.sectorSize);
+      const totalBytes = chain.length * this.sectorSize;
+      data = new Uint8Array(Math.max(totalBytes, size));
       let offset = 0;
       for (const sector of chain) {
         const sectorData = this._readSector(sector);
         if (!sectorData) continue;
-        data.set(new Uint8Array(sectorData), offset);
-        offset += this.sectorSize;
+        const bytesToCopy = Math.min(this.sectorSize, size - offset, data.length - offset);
+        if (bytesToCopy <= 0) break;
+        data.set(new Uint8Array(sectorData, 0, bytesToCopy), offset);
+        offset += bytesToCopy;
+        if (offset >= size) break;
       }
       if (offset > size) data = data.slice(0, size);
     }
