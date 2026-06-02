@@ -81,15 +81,10 @@ The Definition stream contains Parasolid B-Rep data but in SolidWorks' internal 
 - **Effort: High (weeks of reverse engineering)**
 
 ### Option B: Use existing tools
-- **CAD Exchanger SDK** (commercial, has JavaScript API) — reads SLDPRT natively
-- **ODA MCAD SDK** (commercial) — full SLDPRT support
 - **FreeCAD + Python** — can convert SLDPRT → STEP offline
-- **Online APIs** — Convert3D, CAD Exchanger Cloud
 
 ### Option C: Hybrid approach
-- Keep guidance modal for now
-- Add a simple Python script that uses `python-olefile` + `freeCAD` to convert SLDPRT → STEP
-- Users run the script locally, then upload STEP to our converter
+- A simple Python script that uses `python-olefile` + `freeCAD` to convert SLDPRT → STEP
 
 ## Test Files
 Downloaded from sembiance.com:
