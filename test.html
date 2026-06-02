@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SLDPRT Research — Extraction Test</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:monospace;background:#0a0a0a;color:#ccc;padding:20px;max-width:1200px;margin:0 auto}
+h1{color:#f5a520;font-size:1.2rem;margin-bottom:16px}
+h2{color:#8b31ff;font-size:1rem;margin:20px 0 8px}
+.drop{border:2px dashed #333;border-radius:8px;padding:40px;text-align:center;cursor:pointer;margin-bottom:16px}
+.drop:hover{border-color:#f5a520}
+.drop input{display:none}
+pre{background:#111;padding:12px;border-radius:6px;font-size:.72rem;overflow-x:auto;max-height:400px;overflow-y:auto;border:1px solid #1c1c1c}
+.log{color:#666;font-size:.72rem;margin:4px 0}
+.log .ok{color:#4ade80}
+.log .warn{color:#f5a520}
+.log .err{color:#ff3a2d}
+button{background:#f5a520;color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-family:inherit;margin:4px}
+button:hover{background:#e09510}
+button:disabled{background:#333;color:#666;cursor:default}
+#viewer{width:100%;height:400px;background:#040404;border-radius:8px;border:1px solid #1c1c1c;margin:12px 0;display:none}
+#viewer canvas{display:block;width:100%;height:100%}
+.flex{display:flex;gap:12px;flex-wrap:wrap}
+.flex>*{flex:1;min-width:300px}
+</style>
+</head>
+<body>
+
+<h1>SLDPRT Reverse Engineering — Extraction Test</h1>
+
+<div class="drop" id="drop">
+  <input type="file" id="file-input" accept=".sldprt,.sldasm,.SLDPRT,.SLDASM">
+  <p>Drop .sldprt file here or click to select</p>
+</div>
+
+<div id="log"></div>
+
+<div id="viewer">
+  <canvas id="canvas"></canvas>
+</div>
+
+<div class="flex">
+  <div>
+    <h2>OLE2 Streams</h2>
+    <pre id="streams">Load a file to see streams</pre>
+  </div>
+  <div>
+    <h2>Decompressed Data</h2>
+    <pre id="decompressed">Load a file to see decompressed data</pre>
+  </div>
+</div>
+
+<h2>Extraction Report</h2>
+<pre id="report">Load a file to see report</pre>
+
+<div style="margin-top:12px">
+  <button id="btn-obj" disabled onclick="downloadOBJ()">Download OBJ</button>
+  <button id="btn-stl" disabled onclick="downloadSTL()">Download STL</button>
+</div>
+
+<script src="ole2-parser.js"></script>
+<script src="sldprt-extractor.js"></script>
+<script>
+let extractor = null;
+let scene, camera, renderer, mesh;
+
+function log(msg, cls = '') {
+  const el = document.getElementById('log');
+  el.innerHTML += `<div class="log ${cls}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+}
+
+// Three.js setup
+function initViewer() {
+  const container = document.getElementById('viewer');
+  container.style.display = 'block';
+  
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x040404);
+  
+  camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 100000);
+  camera.position.z = 200;
+  
+  renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const dl = new THREE.DirectionalLight(0xf5a520, 1);
+  dl.position.set(1, 2, 3);
+  scene.add(dl);
+  
+  // Mouse rotation
+  let dragging = false, lastX = 0, lastY = 0;
+  container.addEventListener('mousedown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+  window.addEventListener('mouseup', () => dragging = false);
+  container.addEventListener('mousemove', e => {
+    if (!dragging || !mesh) return;
+    mesh.rotation.y += (e.clientX - lastX) * 0.01;
+    mesh.rotation.x += (e.clientY - lastY) * 0.01;
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  container.addEventListener('wheel', e => {
+    camera.position.z = Math.max(5, Math.min(5000, camera.position.z + e.deltaY * 0.5));
+  }, { passive: true });
+  
+  (function loop() {
+    requestAnimationFrame(loop);
+    if (mesh) mesh.rotation.y += 0.003;
+    renderer.render(scene, camera);
+  })();
+}
+
+function showMesh(triangles) {
+  if (mesh) { scene.remove(mesh); mesh = null; }
+  
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(triangles.positions, 3));
+  if (triangles.normals.length > 0) {
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(triangles.normals, 3));
+  } else {
+    geometry.computeVertexNormals();
+  }
+  
+  geometry.computeBoundingBox();
+  const center = new THREE.Vector3();
+  geometry.boundingBox.getCenter(center);
+  geometry.translate(-center.x, -center.y, -center.z);
+  
+  const size = new THREE.Vector3();
+  geometry.boundingBox.getSize(size);
+  const scale = 100 / Math.max(size.x, size.y, size.z);
+  
+  const material = new THREE.MeshPhongMaterial({ 
+    color: 0xf5a520, 
+    specular: 0xffffff, 
+    shininess: 80, 
+    flatShading: true,
+    side: THREE.DoubleSide
+  });
+  
+  mesh = new THREE.Mesh(geometry, material);
+  mesh.scale.setScalar(scale);
+  scene.add(mesh);
+  camera.position.z = 180;
+  
+  log(`✓ Mesh displayed: ${triangles.positions.length / 3} vertices, ${(triangles.positions.length / 9).toLocaleString()} triangles`, 'ok');
+}
+
+async function processFile(file) {
+  clearLog();
+  log(`Loading ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`);
+  
+  document.getElementById('streams').textContent = 'Parsing...';
+  document.getElementById('decompressed').textContent = 'Parsing...';
+  document.getElementById('report').textContent = 'Parsing...';
+  
+  const buffer = await file.arrayBuffer();
+  
+  log('Parsing OLE2 container...');
+  
+  try {
+    extractor = new SldprtExtractor(buffer);
+    await extractor.extract();
+    
+    const report = extractor.getReport();
+    
+    // Show streams
+    let streamsText = `Found ${report.streams.length} streams:\n\n`;
+    for (const s of report.streams) {
+      streamsText += `${s.path} (${(s.size / 1024).toFixed(1)} KB)\n`;
+    }
+    document.getElementById('streams').textContent = streamsText;
+    
+    // Show ZLB streams
+    log(`Found ${report.zlbCount} _ZLB (zlib-compressed) streams`, report.zlbCount > 0 ? 'ok' : 'warn');
+    
+    // Show decompressed data
+    let decompText = `Decompressed ${report.decompressedKeys.length} streams:\n\n`;
+    for (const key of report.decompressedKeys) {
+      const size = report.decompressedSizes[key];
+      decompText += `${key}\n  → ${(size / 1024).toFixed(1)} KB decompressed\n`;
+      
+      // Show hex preview
+      const data = extractor.decompressedData[key];
+      const bytes = new Uint8Array(data);
+      let hex = '  Hex: ';
+      for (let i = 0; i < Math.min(64, bytes.length); i++) {
+        hex += bytes[i].toString(16).padStart(2, '0') + ' ';
+      }
+      decompText += hex + '\n';
+      
+      // Check if it looks like Parasolid
+      const asciiPreview = new TextDecoder('ascii', { fatal: false }).decode(bytes.slice(0, 128));
+      const printable = asciiPreview.replace(/[^\x20-\x7E]/g, '.');
+      decompText += `  ASCII: ${printable}\n\n`;
+    }
+    document.getElementById('decompressed').textContent = decompText;
+    
+    // Show report
+    let reportText = JSON.stringify(report, null, 2);
+    document.getElementById('report').textContent = reportText;
+    
+    // Show mesh if we got triangles
+    if (report.hasTriangles) {
+      log(`Extracted ${report.stats.triangleCount.toLocaleString()} triangles!`, 'ok');
+      initViewer();
+      showMesh(extractor.triangles);
+      document.getElementById('btn-obj').disabled = false;
+      document.getElementById('btn-stl').disabled = false;
+    } else {
+      log('No triangles extracted. Check hex dumps for format clues.', 'warn');
+      log('Try: Look for float32 patterns in the decompressed data above.', 'warn');
+    }
+    
+  } catch (e) {
+    log(`Error: ${e.message}`, 'err');
+    console.error(e);
+    document.getElementById('report').textContent = 'Error: ' + e.message;
+  }
+}
+
+// File input handlers
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+const drop = document.getElementById('drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.borderColor = '#f5a520'; });
+drop.addEventListener('dragleave', () => drop.style.borderColor = '#333');
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.style.borderColor = '#333';
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
+
+function downloadOBJ() {
+  if (!extractor) return;
+  const obj = extractor.toOBJ();
+  if (!obj) { log('No geometry to export', 'err'); return; }
+  const blob = new Blob([obj], { type: 'text/plain' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'extracted.obj' });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 100);
+}
+
+function downloadSTL() {
+  if (!extractor || !extractor.triangles) return;
+  const pos = extractor.triangles.positions;
+  const triCount = pos.length / 9;
+  const buf = new ArrayBuffer(84 + triCount * 50);
+  const dv = new DataView(buf);
+  
+  for (let i = 0, off = 84; i < triCount; i++, off += 50) {
+    const ax=pos[i*9], ay=pos[i*9+1], az=pos[i*9+2];
+    const bx=pos[i*9+3], by=pos[i*9+4], bz=pos[i*9+5];
+    const cx=pos[i*9+6], cy=pos[i*9+7], cz=pos[i*9+8];
+    const ux=bx-ax, uy=by-ay, uz=bz-az, vx=cx-ax, vy=cy-ay, vz=cz-az;
+    const nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    const nl=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
+    dv.setFloat32(off, nx/nl, true); dv.setFloat32(off+4, ny/nl, true); dv.setFloat32(off+8, nz/nl, true);
+    dv.setFloat32(off+12, ax, true); dv.setFloat32(off+16, ay, true); dv.setFloat32(off+20, az, true);
+    dv.setFloat32(off+24, bx, true); dv.setFloat32(off+28, by, true); dv.setFloat32(off+32, bz, true);
+    dv.setFloat32(off+36, cx, true); dv.setFloat32(off+40, cy, true); dv.setFloat32(off+44, cz, true);
+  }
+  dv.setUint32(80, triCount, true);
+  
+  const blob = new Blob([buf], { type: 'application/octet-stream' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'extracted.stl' });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 100);
+}
+</script>
+</body>
+</html>
