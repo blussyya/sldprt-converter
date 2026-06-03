@@ -8,12 +8,230 @@
  * 
  * Usage:
  *   Node.js: const { extractMesh } = require('./slprd-extractor.js');
- *   Browser: import { extractMesh } from './slprd-extractor.js';
+ *   Browser: <script src="slprd-extractor.js"></script> then window.slprdExtractor.extractMesh(buf)
  */
 
 // ============================================================
-// OpenSX Format Decompressor (SW 2015+)
+// Minimal Inflate (raw deflate, for browser compatibility)
 // ============================================================
+
+const _inflate = (function() {
+    // Check if Node.js zlib is available
+    if (typeof require !== 'undefined') {
+        try {
+            const zlib = require('zlib');
+            return {
+                inflateRaw: (buf) => zlib.inflateRawSync(buf),
+                inflate: (buf) => zlib.inflateSync(buf),
+                brotli: (buf) => zlib.brotliDecompressSync(buf)
+            };
+        } catch (e) {}
+    }
+    
+    // Browser: inflate implementation based on pako (simplified)
+    // Handles raw deflate (wbits=-15) used in SLDPRT files
+    function inflateRaw(input) {
+        const output = [];
+        const win = new Uint8Array(32768);
+        let wpos = 0;
+        let bitbuf = 0, bitcnt = 0;
+        let ip = 0;
+        
+        function ensureBits(n) {
+            while (bitcnt < n) {
+                if (ip >= input.length) return;
+                bitbuf |= input[ip++] << bitcnt;
+                bitcnt += 8;
+            }
+        }
+        
+        function readBits(n) {
+            ensureBits(n);
+            const val = bitbuf & ((1 << n) - 1);
+            bitbuf >>= n;
+            bitcnt -= n;
+            return val;
+        }
+        
+        function readBytes(n) {
+            // Flush bit buffer
+            bitbuf = 0;
+            bitcnt = 0;
+            const start = ip;
+            ip += n;
+            return input.subarray(start, Math.min(ip, input.length));
+        }
+        
+        function emitByte(b) {
+            output.push(b);
+            win[wpos] = b;
+            wpos = (wpos + 1) & 0x7FFF;
+        }
+        
+        function emitBytes(src, len) {
+            for (let i = 0; i < len; i++) {
+                const b = win[(src + i) & 0x7FFF];
+                output.push(b);
+                win[wpos] = b;
+                wpos = (wpos + 1) & 0x7FFF;
+            }
+        }
+        
+        try {
+            while (ip < input.length) {
+                const bfinal = readBits(1);
+                const btype = readBits(2);
+                
+                if (btype === 0) {
+                    // Stored
+                    readBytes(2); // skip len/nlen bytes (already aligned)
+                    const len = input[ip] | (input[ip + 1] << 8);
+                    ip += 2;
+                    const nlen = input[ip] | (input[ip + 1] << 8);
+                    ip += 2;
+                    for (let i = 0; i < len; i++) {
+                        emitByte(input[ip++]);
+                    }
+                } else if (btype === 1 || btype === 2) {
+                    // Fixed or dynamic Huffman
+                    let litLens, distLens;
+                    
+                    if (btype === 1) {
+                        // Fixed codes
+                        litLens = new Uint8Array(288);
+                        distLens = new Uint8Array(32);
+                        for (let i = 0; i < 144; i++) litLens[i] = 8;
+                        for (let i = 144; i < 256; i++) litLens[i] = 9;
+                        for (let i = 256; i < 280; i++) litLens[i] = 7;
+                        for (let i = 280; i < 288; i++) litLens[i] = 8;
+                        for (let i = 0; i < 32; i++) distLens[i] = 5;
+                    } else {
+                        // Dynamic codes
+                        const hlit = readBits(5) + 257;
+                        const hdist = readBits(5) + 1;
+                        const hclen = readBits(4) + 4;
+                        
+                        const clenOrder = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+                        const clenLens = new Uint8Array(19);
+                        for (let i = 0; i < hclen; i++) {
+                            clenLens[clenOrder[i]] = readBits(3);
+                        }
+                        
+                        // Build code length tree
+                        const clenCodes = buildFixedCodes(clenLens, 19);
+                        
+                        litLens = new Uint8Array(288);
+                        distLens = new Uint8Array(32);
+                        let li = 0, di = 0;
+                        let total = hlit + hdist;
+                        
+                        while (li + di < total) {
+                            const sym = readSymbol(clenCodes);
+                            if (sym < 16) {
+                                if (li < hlit) litLens[li++] = sym;
+                                else distLens[di++] = sym;
+                            } else if (sym === 16) {
+                                const rep = readBits(2) + 3;
+                                const last = li < hlit ? litLens[li - 1] : distLens[di - 1];
+                                for (let i = 0; i < rep; i++) {
+                                    if (li < hlit) litLens[li++] = last;
+                                    else distLens[di++] = last;
+                                }
+                            } else if (sym === 17) {
+                                li += readBits(3) + 3;
+                            } else if (sym === 18) {
+                                li += readBits(7) + 11;
+                            }
+                        }
+                    }
+                    
+                    const litCodes = buildFixedCodes(litLens, 288);
+                    const distCodes = buildFixedCodes(distLens, 32);
+                    
+                    while (ip < input.length) {
+                        const sym = readSymbol(litCodes);
+                        if (sym === 256) break;
+                        if (sym < 256) {
+                            emitByte(sym);
+                        } else {
+                            const lenSym = sym - 257;
+                            const lenTable = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+                            const extraTable = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+                            let len = lenTable[lenSym] + readBits(extraTable[lenSym]);
+                            
+                            const dsym = readSymbol(distCodes);
+                            const distTable = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+                            const dextraTable = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+                            let dist = distTable[dsym] + readBits(dextraTable[dsym]);
+                            
+                            emitBytes(wpos - dist + 32768, len);
+                        }
+                    }
+                } else {
+                    break; // bad type
+                }
+                
+                if (bfinal) break;
+            }
+        } catch (e) {
+            // Return what we have
+        }
+        
+        return new Uint8Array(output);
+    }
+    
+    function buildFixedCodes(lens, maxSymbols) {
+        const counts = new Uint16Array(16);
+        for (let i = 0; i < maxSymbols; i++) {
+            if (lens[i] > 0 && lens[i] <= 15) counts[lens[i]]++;
+        }
+        
+        let code = 0;
+        const nextCode = new Uint16Array(16);
+        for (let bits = 1; bits <= 15; bits++) {
+            code = (code + counts[bits - 1]) << 1;
+            nextCode[bits] = code;
+        }
+        
+        const codes = [];
+        for (let i = 0; i < maxSymbols; i++) {
+            if (lens[i] > 0) {
+                codes.push({ len: lens[i], val: i, code: nextCode[lens[i]]++ });
+            }
+        }
+        codes.sort((a, b) => a.code - b.code);
+        return codes;
+    }
+    
+    function readSymbol(codes) {
+        ensureBits(15);
+        let code = 0;
+        let first = 0;
+        let idx = 0;
+        
+        for (const c of codes) {
+            while (idx < c.len) {
+                code = (code << 1) | ((bitbuf >> (bitcnt - 1 - idx)) & 1);
+                idx++;
+            }
+            if (code === c.code) {
+                bitcnt -= c.len;
+                bitbuf >>= c.len;
+                return c.val;
+            }
+            code = 0;
+            idx = 0;
+        }
+        
+        return 256; // end of block
+    }
+    
+    return {
+        inflateRaw: inflateRaw,
+        inflate: inflateRaw,
+        brotli: null
+    };
+})();
 
 function _rolByte(b, shift) {
     shift &= 7;
@@ -34,9 +252,15 @@ function _findAll(buf, pattern) {
 }
 
 function _decompressOpenSX(buf) {
+    buf = _ensureBuffer(buf);
     const key = buf[7];
-    const marker = Buffer.from([0x14, 0x00, 0x06, 0x00, 0x08, 0x00]);
+    const marker = new Uint8Array([0x14, 0x00, 0x06, 0x00, 0x08, 0x00]);
     const streams = {};
+    
+    function toBuffer(arr) {
+        if (typeof Buffer !== 'undefined' && Buffer.from) return Buffer.from(arr);
+        return arr;
+    }
     
     for (const mp of _findAll(buf, marker)) {
         const si = mp - 4;
@@ -68,19 +292,17 @@ function _decompressOpenSX(buf) {
             let decompressed = null;
             
             try {
-                const zlib = require('zlib');
-                decompressed = zlib.inflateRawSync(compressed);
+                decompressed = _inflate.inflateRaw(compressed);
             } catch (e) {}
             
-            if (!decompressed) {
+            if (!decompressed || decompressed.length === 0) {
                 try {
-                    const zlib = require('zlib');
-                    decompressed = zlib.inflateSync(compressed);
+                    decompressed = _inflate.inflate(compressed);
                 } catch (e) {}
             }
             
-            if (decompressed && !streams[name]) {
-                streams[name] = decompressed;
+            if (decompressed && decompressed.length > 0 && !streams[name]) {
+                streams[name] = toBuffer(decompressed);
             }
         }
     }
@@ -102,14 +324,13 @@ function findDisplayLists(buf) {
             if (dlData && dlData.length > 100) return dlData;
         }
         
-        // Try compressed
+        // Try compressed (__Zip uses brotli)
         dlEntry = ole.entries.find(e => e.name === 'DisplayLists__Zip' && e.type === 2);
         if (dlEntry) {
             const dlData = readStream(buf, ole.fat, dlEntry, ole.ss);
-            if (dlData && dlData.length > 100) {
+            if (dlData && dlData.length > 100 && _inflate.brotli) {
                 try {
-                    const zlib = require('zlib');
-                    const decompressed = zlib.brotliDecompressSync(dlData.subarray(14));
+                    const decompressed = _inflate.brotli(dlData.subarray(14));
                     if (decompressed && decompressed.length > 100) return decompressed;
                 } catch (e) {}
             }
@@ -135,7 +356,27 @@ function findDisplayLists(buf) {
 // OLE2 Compound File Parser
 // ============================================================
 
+function _ensureBuffer(data) {
+    if (typeof Buffer !== 'undefined' && Buffer.isBuffer(data)) return data;
+    
+    // Create a wrapper around Uint8Array/ArrayBuffer with Buffer-like methods
+    const arr = data instanceof ArrayBuffer ? new Uint8Array(data) : 
+                data instanceof Uint8Array ? data : new Uint8Array(data);
+    
+    const wrapper = {
+        _data: arr,
+        length: arr.length,
+        readUInt16LE: function(off) { return arr[off] | (arr[off+1] << 8); },
+        readInt32LE: function(off) { return (arr[off] | (arr[off+1] << 8) | (arr[off+2] << 16) | (arr[off+3] << 24)); },
+        readUInt32LE: function(off) { return (arr[off] | (arr[off+1] << 8) | (arr[off+2] << 16) | (arr[off+3] << 24)) >>> 0; },
+        subarray: function(start, end) { return arr.subarray(start, end); },
+        slice: function(start, end) { return arr.slice(start, end); }
+    };
+    return wrapper;
+}
+
 function parseOLE2(buf) {
+    buf = _ensureBuffer(buf);
     const ss = 1 << buf.readUInt16LE(30);
     
     // Read DIFAT (109 entries from header)
@@ -196,6 +437,7 @@ function parseOLE2(buf) {
 }
 
 function readStream(buf, fat, entry, ss) {
+    buf = _ensureBuffer(buf);
     if (entry.type !== 2 || entry.startSector < 0) return null;
     const chunks = [];
     let cur = entry.startSector;
