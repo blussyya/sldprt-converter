@@ -17,24 +17,24 @@ cd sldprt-converter
 npm install
 
 # Convert to OBJ (default)
-node src/slprd-cli.js mypart.sldprt
+node src/sldprt-cli.js mypart.sldprt
 
 # Convert to binary STL
-node src/slprd-cli.js mypart.sldprt -f binary-stl
+node src/sldprt-cli.js mypart.sldprt -f binary-stl
 
 # Scale to millimeters (internal units are meters)
-node src/slprd-cli.js mypart.sldprt -f binary-stl --scale 1000
+node src/sldprt-cli.js mypart.sldprt -f binary-stl --scale 1000
 
 # Show mesh info only
-node src/slprd-cli.js mypart.sldprt --info
+node src/sldprt-cli.js mypart.sldprt --info
 
 # Batch convert
-node src/slprd-cli.js *.sldprt -f obj --scale 1000
+node src/sldprt-cli.js *.sldprt -f obj --scale 1000
 ```
 
 ### Browser (Self-Contained)
 
-Open `web/viewer.html` in any modern browser. Drop an SLDPRT file onto the page — no server needed. Uses inlined pako for decompression.
+Open `web/viewer.html` in any modern browser. Drop an SLDPRT file onto the page — no server needed. Uses pako for decompression (loaded from CDN, requires internet).
 
 ## CLI Options
 
@@ -109,9 +109,9 @@ The extractor scans the entire stream for multiple surfaces, not just one. Each 
 sldprt-converter/
 ├── src/
 │   ├── slprd-extractor.js   — Core extraction library (Node.js + browser)
-│   └── slprd-cli.js         — CLI tool for batch conversion
+│   └── sldprt-cli.js         — CLI tool for batch conversion
 ├── web/
-│   └── viewer.html          — Self-contained browser viewer with inlined pako
+│   └── viewer.html          — Browser viewer with pako (CDN)
 ├── test/                    — Test files and harnesses
 ├── analyze/                 — Analysis and debugging scripts
 ├── package.json

@@ -12,7 +12,7 @@ const FILES = [
     'Dekor..SLDPRT',
 ];
 
-const researchDir = 'C:\\.git\\sldprt-research';
+const researchDir = process.env.SLDPRT_TEST_DIR || path.join(__dirname, '..', 'test-files');
 
 for (const file of FILES) {
     const fp = path.join(researchDir, file);

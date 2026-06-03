@@ -67,6 +67,11 @@ h2 { font-size: 14px; color: #ffa502; margin: 16px 0 8px; }
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+<script>
+if (typeof pako === 'undefined') {
+  document.getElementById('status').textContent = 'Error: pako failed to load. Check internet connection.';
+}
+</script>
 <script src="../src/slprd-extractor.js"></script>
 <script>
 var currentMeshData = null, currentFileName = '';
