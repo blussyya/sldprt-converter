@@ -116,10 +116,7 @@ function parseDisplayLists(data) {
     // The header follows the last class record. We find the last ff ff marker
     // and scan forward from there for the first valid header.
     
-    let bestHeaderOffset = -1;
-    let bestTotalVertices = 0;
-    let bestFaceCount = 0;
-    let bestCounts = [];
+    // (no persistent header selection - we try all candidates below)
     
     // Find last ff ff marker (end of class records)
     let lastClassRecordEnd = 0;
@@ -129,12 +126,16 @@ function parseDisplayLists(data) {
         }
     }
     
-    // Scan forward from last class record for valid headers
-    // Try all 4 byte alignments
+    // Collect candidate headers from a small window near the last class record.
+    // Real DisplayLists headers are always within ~500 bytes of the last ff ff marker.
+    // Scanning the full stream produces false positives from random u32 patterns.
+    const candidates = [];
+    const SEARCH_RADIUS = 1000;
+    
     for (let align = 0; align < 4; align++) {
-        for (let i = lastClassRecordEnd + align; i < Math.min(data.length - 200, lastClassRecordEnd + 2000); i += 4) {
+        for (let i = Math.max(0, lastClassRecordEnd - 100) + align; i < Math.min(data.length - 200, lastClassRecordEnd + SEARCH_RADIUS); i += 4) {
             const fc = data.readUInt32LE(i);
-            if (fc < 1 || fc > 100) continue;
+            if (fc < 2 || fc > 100) continue;
             
             let valid = true;
             const counts = [];
@@ -148,130 +149,111 @@ function parseDisplayLists(data) {
             
             if (!valid || counts.length !== fc) continue;
             
-            const totalVertices = counts.reduce((a, b) => a + b, 0);
-            const expectedBytes = totalVertices * 12;
+            const totalVerts = counts.reduce((a, b) => a + b, 0);
+            const expectedBytes = totalVerts * 12;
             
             if (i + 4 + fc * 4 + expectedBytes > data.length) continue;
             
-            // Prefer the first valid header after class records
-            if (bestHeaderOffset === -1) {
-                bestHeaderOffset = i;
-                bestTotalVertices = totalVertices;
-                bestFaceCount = fc;
-                bestCounts = counts;
-            }
+            candidates.push({ offset: i, fc, counts, totalVerts });
         }
     }
     
-    // Fallback: if no header found near class records, scan the full stream
-    if (bestHeaderOffset === -1) {
-        for (let align = 0; align < 4; align++) {
-            for (let i = align; i < data.length - 200; i += 4) {
-                const fc = data.readUInt32LE(i);
-                if (fc < 1 || fc > 100) continue;
-                
-                let valid = true;
-                const counts = [];
-                for (let j = 0; j < fc; j++) {
-                    const offset = i + 4 + j * 4;
-                    if (offset + 4 > data.length) { valid = false; break; }
-                    const v = data.readUInt32LE(offset);
-                    if (v < 2 || v > 100) { valid = false; break; }
-                    counts.push(v);
-                }
-                
-                if (!valid || counts.length !== fc) continue;
-                
-                const totalVertices = counts.reduce((a, b) => a + b, 0);
-                const expectedBytes = totalVertices * 12;
-                
-                if (i + 4 + fc * 4 + expectedBytes > data.length) continue;
-                
-                if (totalVertices > bestTotalVertices) {
-                    bestHeaderOffset = i;
-                    bestTotalVertices = totalVertices;
-                    bestFaceCount = fc;
-                    bestCounts = counts;
-                }
-            }
+    if (candidates.length === 0) return result;
+    
+    // Deduplicate candidates by offset
+    const seen = new Set();
+    const uniqueCandidates = [];
+    for (const c of candidates) {
+        if (!seen.has(c.offset)) {
+            seen.add(c.offset);
+            uniqueCandidates.push(c);
         }
     }
     
-    headerOffset = bestHeaderOffset;
-    faceCount = bestFaceCount;
-    faceVertexCounts = bestCounts;
-    
-    if (headerOffset === -1) return result;
-    
-    const headerEnd = headerOffset + 4 + faceCount * 4;
-    const totalVertices = faceVertexCounts.reduce((a, b) => a + b, 0);
-    const expectedVertexBytes = totalVertices * 12;
-    
-    // Strategy: scan forward from headerEnd for valid vertex blocks.
-    // The DisplayLists structure has gap data between header and real vertex block.
-    // Gap data has interleaved -0.075 y-values (bottom face z=-0.075mm) and
-    // repeated coordinate patterns. Real vertex data has diverse, non-repeated coords.
-    //
-    // Detection heuristics (applied in order):
-    //   1. All 159 triplets must be valid float32 in range
-    //   2. No more than 3 vertices with y near -0.075 (gap signature)
-    //   3. X and Y values must have sufficient diversity (stddev > 0.001)
-    //   4. No more than 30% of vertices share the same y-value (gap has ~83%)
-    //   5. No coordinate component should have a value > 0.5 (excludes transform matrices)
-    
-    let vertexDataOffset = -1;
-    
-    function scoreCandidate(off) {
+    // Score vertex blocks for each candidate header
+    function scoreCandidate(off, nv) {
         const xs = [], ys = [], zs = [];
         let yNeg075 = 0;
         let yValues = {};
+        let garbageCount = 0;
+        let allSame = true;
+        let firstX = null, firstY = null, firstZ = null;
         
-        for (let v = 0; v < totalVertices; v++) {
+        for (let v = 0; v < nv; v++) {
             const p = off + v * 12;
             if (p + 12 > data.length) return -1;
             const x = data.readFloatLE(p);
             const y = data.readFloatLE(p + 4);
             const z = data.readFloatLE(p + 8);
-            if (!(isFinite(x) && isFinite(y) && isFinite(z) &&
-                  Math.abs(x) < 100000 && Math.abs(y) < 100000 && Math.abs(z) < 100000)) {
-                return -1;
-            }
-            if (Math.abs(x) > 0.5 || Math.abs(y) > 0.5 || Math.abs(z) > 0.5) return -1;
+            if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return -1;
+            if (Math.abs(x) > 100000 || Math.abs(y) > 100000 || Math.abs(z) > 100000) { garbageCount++; continue; }
             if (Math.abs(y - (-0.075)) < 0.001) yNeg075++;
             xs.push(x); ys.push(y); zs.push(z);
             const yKey = (y * 10000) | 0;
             yValues[yKey] = (yValues[yKey] || 0) + 1;
+            if (firstX === null) { firstX = x; firstY = y; firstZ = z; }
+            else if (Math.abs(x - firstX) > 0.0001 || Math.abs(y - firstY) > 0.0001 || Math.abs(z - firstZ) > 0.0001) allSame = false;
         }
         
-        // Filter: gap data has many -0.075 y-values
-        if (yNeg075 > 3) return -1;
-        
-        // Filter: gap data has many vertices sharing the same y-value
+        if (garbageCount > 2) return -1;
+        if (allSame) return -1;
+        if (yNeg075 > 3 && yNeg075 > nv * 0.5) return -1;
         const maxRepeat = Math.max(...Object.values(yValues));
-        if (maxRepeat > totalVertices * 0.3) return -1;
+        if (maxRepeat > nv * 0.6) return -1;
         
-        // Score: diversity of x and y coordinates (higher is better for real mesh)
         const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
         const stddev = arr => { const m = mean(arr); return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length); };
-        const xStd = stddev(xs);
-        const yStd = stddev(ys);
+        const sx = stddev(xs), sy = stddev(ys), sz = stddev(zs);
         
-        return xStd + yStd;
+        // Real mesh vertices form a compact, balanced 3D shape.
+        // Gap data is scattered with one dominant axis (high y-spread from -0.075 interleaving).
+        // Score by: vertex count (more = better) × balance (all axes similar = better)
+        // Balance: how evenly spread the vertices are across all 3 axes (1.0=bad, 3.0=perfect)
+        const maxStd = Math.max(sx, sy, sz, 0.0001);
+        const balance = (sx + sy + sz) / maxStd;
+        
+        return balance * Math.sqrt(nv);
     }
     
-    // Scan from headerEnd at all 4 byte alignments
-    let bestScore = -1;
-    for (let align = 0; align < 4; align++) {
-        for (let off = headerEnd + align; off <= data.length - expectedVertexBytes; off += 4) {
-            const score = scoreCandidate(off);
-            if (score > bestScore) {
-                bestScore = score;
-                vertexDataOffset = off;
+    // Pick candidate with highest vertex count that passes validation
+    uniqueCandidates.sort((a, b) => b.totalVerts - a.totalVerts);
+    
+    let bestCandidate = null;
+    let bestVertexOffset = -1;
+    
+    for (const cand of uniqueCandidates) {
+        const headerEnd = cand.offset + 4 + cand.fc * 4;
+        const nv = cand.totalVerts;
+        const expectedBytes = nv * 12;
+        if (headerEnd + expectedBytes > data.length) continue;
+        
+        let bestAlignScore = -1;
+        let bestAlignOffset = -1;
+        
+        for (let align = 0; align < 4; align++) {
+            for (let off = headerEnd + align; off <= Math.min(data.length - expectedBytes, headerEnd + 5000); off += 4) {
+                const s = scoreCandidate(off, nv);
+                if (s > bestAlignScore) {
+                    bestAlignScore = s;
+                    bestAlignOffset = off;
+                }
             }
+        }
+        
+        if (bestAlignOffset !== -1 && bestAlignScore > 0) {
+            bestCandidate = cand;
+            bestVertexOffset = bestAlignOffset;
+            break;
         }
     }
     
-    if (vertexDataOffset === -1) return result;
+    if (bestCandidate === null || bestVertexOffset === -1) return result;
+    
+    headerOffset = bestCandidate.offset;
+    faceCount = bestCandidate.fc;
+    faceVertexCounts = bestCandidate.counts;
+    const totalVertices = bestCandidate.totalVerts;
+    const vertexDataOffset = bestVertexOffset;
     
     // Extract vertices
     
@@ -391,6 +373,7 @@ function extractMesh(buf) {
         let minZ = Infinity, maxZ = -Infinity;
         
         for (const [x, y, z] of result.vertices) {
+            if (Math.abs(x) > 100000 || Math.abs(y) > 100000 || Math.abs(z) > 100000) continue;
             minX = Math.min(minX, x);
             maxX = Math.max(maxX, x);
             minY = Math.min(minY, y);
