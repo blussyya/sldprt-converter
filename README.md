@@ -2,64 +2,39 @@
 
 Extract 3D mesh from SolidWorks `.sldprt` files — no SolidWorks license needed.
 
-Parses the OLE2 container, finds the `DisplayLists` stream with tessellated vertex data, and outputs standard OBJ/STL files.
+Parses the OLE2 container (or modern OpenSX format), finds the `DisplayLists` stream with tessellated vertex data, and outputs standard OBJ/STL files.
 
-**Status:** Working for SLDPRT files with uncompressed `DisplayLists` streams. Files using `DisplayLists__Zip` (compressed) are not yet supported.
+**Status:** Working for both legacy OLE2-based and modern OpenSX-compressed SLDPRT files. 4 of 5 Grabcad test files successfully extract.
 
 ## Quick Start
 
 ### CLI (Node.js)
 
 ```bash
-# Convert to OBJ (default)
-node slprd-cli.js mypart.sldprt
+cd sldprt-converter
 
-# Convert to STL
-node slprd-cli.js mypart.sldprt -f stl
+# Install dependencies
+npm install
+
+# Convert to OBJ (default)
+node src/slprd-cli.js mypart.sldprt
+
+# Convert to binary STL
+node src/slprd-cli.js mypart.sldprt -f binary-stl
 
 # Scale to millimeters (internal units are meters)
-node slprd-cli.js mypart.sldprt -f binary-stl --scale 1000
+node src/slprd-cli.js mypart.sldprt -f binary-stl --scale 1000
 
 # Show mesh info only
-node slprd-cli.js mypart.sldprt --info
+node src/slprd-cli.js mypart.sldprt --info
 
 # Batch convert
-node slprd-cli.js *.sldprt -f obj --scale 1000
+node src/slprd-cli.js *.sldprt -f obj --scale 1000
 ```
 
-### Programmatic (Node.js)
+### Browser (Self-Contained)
 
-```javascript
-const fs = require('fs');
-const { extractMesh, toOBJ, toSTL, toBinarySTL } = require('./slprd-extractor.js');
-
-const buf = fs.readFileSync('mypart.sldprt');
-const mesh = extractMesh(buf);
-
-if (mesh.vertices.length > 0) {
-    fs.writeFileSync('output.obj', toOBJ(mesh));
-    fs.writeFileSync('output.stl', toSTL(mesh));
-    fs.writeFileSync('output-bin.stl', toBinarySTL(mesh));
-}
-```
-
-### Browser
-
-```html
-<script src="slprd-extractor.js"></script>
-<script>
-document.getElementById('fileInput').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    const buf = await file.arrayBuffer();
-    const mesh = slprdExtractor.extractMesh(buf);
-    
-    if (mesh.vertices.length > 0) {
-        const obj = slprdExtractor.toOBJ(mesh);
-        // Load into Three.js, download, etc.
-    }
-});
-</script>
-```
+Open `web/viewer.html` in any modern browser. Drop an SLDPRT file onto the page — no server needed. Uses inlined pako for decompression.
 
 ## CLI Options
 
@@ -79,45 +54,69 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 
 ## How It Works
 
-SLDPRT files are OLE2 compound documents. Inside, the `DisplayLists` stream contains tessellated mesh data:
+### Two File Formats
 
+SLDPRT files come in two formats:
+
+1. **Legacy OLE2** — Standard compound document. `DisplayLists` stream is raw (or `__Zip` compressed, not yet supported).
+2. **Modern OpenSX** — SolidWorks 2015+ format. `Contents/DisplayLists` stream is compressed with ROL + raw deflate.
+
+### OpenSX Decompression
+
+For modern files, the extractor:
+1. Scans for the OpenSX stream marker: `14 00 06 00 08 00`
+2. Finds the `Contents/DisplayLists` stream entry
+3. ROL-decodes the stream name (key byte 7 — always 4)
+4. Decompresses with raw deflate (pako `inflateRaw`)
+
+### Mesh Extraction
+
+The decompressed DisplayLists stream contains:
 ```
-[class records] [u32 header: faceCount + per-face vertex counts] [vertex data: float32 LE triplets]
+[8-byte header] [11 × float64 LE metadata] [u32 faceCount] [u32[] per-face vertex counts] [float32 LE vertex positions]
 ```
 
 The extractor:
-1. Parses the OLE2 container to find the `DisplayLists` stream
-2. Scans for the tessellation header (face vertex counts)
-3. Detects the vertex block by filtering out gap data (interleaved -0.075 y-values)
-4. Reads `totalVertices × 12` bytes as float32 LE x,y,z triplets
-5. Builds face connectivity as triangle fans
+1. Reads the face-count header at offset 0x60
+2. Scans for valid vertex patterns (coordinates in ±0.6 range)
+3. Reads float32 LE x,y,z triplets for each surface
+4. Builds face connectivity as triangle fans per face
 
-## Limitations
+### Multi-Surface Support
 
-- **`DisplayLists__Zip` not supported** — Newer SLDPRT files compress the DisplayLists stream with SolidWorks' custom `__Zip` format. Decompression works (brotli at offset 14) but the output is another encoding layer that hasn't been reverse-engineered.
-- **Only tessellated mesh** — Extracts the pre-tessellated rendering mesh, not the full B-Rep geometry. This is the same mesh SolidWorks uses for display.
-- **Internal units** — Coordinates are in the model's internal units (typically meters). Use `--scale 1000` for millimeters.
-
-## File Structure
-
-```
-SLDPRT = OLE2 compound file
-├── DisplayLists          — Tessellated mesh (what we extract)
-├── DisplayLists__Zip     — Compressed tessellation (not yet supported)
-├── Config-0              — Feature tree (extrusions, sketches, etc.)
-├── Config-0-Body         — Serialized B-Rep geometry (proprietary format)
-├── Header                — SW version metadata
-├── Preview               — Thumbnail bitmap
-└── SummaryInformation    — OLE properties
-```
+The extractor scans the entire stream for multiple surfaces, not just one. Each surface is independently detected and merged into the final mesh.
 
 ## Test Results
 
-| File | Format | Vertices | Faces | Triangles |
-|------|--------|----------|-------|-----------|
-| doneConsole.sldprt | DisplayLists | 159 | 25 | 109 |
-| SLIDING TABLE.SLDPRT | DisplayLists__Zip | — | — | — |
-| CAM.SLDPRT | DisplayLists__Zip | — | — | — |
+| File | Format | Surfaces | Vertices | Faces | Time |
+|------|--------|----------|----------|-------|------|
+| PTC GE8080-8.SLDPRT | OpenSX | 101 | 541 | 110 | 9ms |
+| distributor main boss rev a.SLDPRT | OpenSX | 25 | 818 | 45 | 19ms |
+| Helical Bevel Gear.SLDPRT | OpenSX | 72 | 2,200 | 159 | 27ms |
+| Pocket Wheel.SLDPRT | OpenSX | 186 | 6,242 | 683 | 51ms |
+| Dekor..SLDPRT | OpenSX (unsupported) | 0 | 0 | 0 | 35ms |
+
+## Limitations
+
+- **Face connectivity** — Currently uses triangle fans per face, not true mesh connectivity. Works visually but may have incorrect normals at shared edges.
+- **Dekor format** — Some files use a different internal format that isn't yet supported (different MFC class structure, header zeros, garbled stream names).
+- **B-Rep not supported** — Extracts the pre-tessellated rendering mesh, not the full B-Rep geometry. This is the same mesh SolidWorks uses for display.
+- **Internal units** — Coordinates are in the model's internal units (typically meters). Use `--scale 1000` for millimeters.
+
+## Repo Structure
+
+```
+sldprt-converter/
+├── src/
+│   ├── slprd-extractor.js   — Core extraction library (Node.js + browser)
+│   └── slprd-cli.js         — CLI tool for batch conversion
+├── web/
+│   └── viewer.html          — Self-contained browser viewer with inlined pako
+├── test/                    — Test files and harnesses
+├── analyze/                 — Analysis and debugging scripts
+├── package.json
+└── LICENSE                  — MIT
+```
 
 ## License
 
