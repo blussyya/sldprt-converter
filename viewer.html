@@ -78,14 +78,15 @@ function _ensureBuffer(data) {
   if (typeof Buffer !== 'undefined' && Buffer.isBuffer(data)) return data;
   var arr = data instanceof ArrayBuffer ? new Uint8Array(data) :
             data instanceof Uint8Array ? data : new Uint8Array(data);
+  var _dv = null;
   return {
     _data: arr, length: arr.length,
     readUInt16LE: function(o) { return arr[o] | (arr[o+1] << 8); },
     readInt32LE: function(o) { return arr[o] | (arr[o+1] << 8) | (arr[o+2] << 16) | (arr[o+3] << 24); },
     readUInt32LE: function(o) { return (arr[o] | (arr[o+1] << 8) | (arr[o+2] << 16) | (arr[o+3] << 24)) >>> 0; },
     readFloatLE: function(o) {
-      var dv = new DataView(arr.buffer, arr.byteOffset, arr.byteLength);
-      return dv.getFloat32(o, true);
+      if (!_dv) _dv = new DataView(arr.buffer, arr.byteOffset, arr.byteLength);
+      return _dv.getFloat32(o, true);
     },
     subarray: function(s, e) { return arr.subarray(s, e); },
     slice: function(s, e) { return arr.slice(s, e); }
