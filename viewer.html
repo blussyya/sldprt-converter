@@ -6,44 +6,73 @@
 <title>SLDPRT Mesh Viewer</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
 #container { display: flex; height: 100vh; }
-#sidebar { width: 320px; background: #16213e; padding: 20px; overflow-y: auto; border-right: 1px solid #333; flex-shrink: 0; }
-#viewer { flex: 1; position: relative; background: #1a1a2e; }
-h1 { font-size: 20px; color: #ff6b6b; margin-bottom: 12px; }
+#sidebar { width: 340px; background: #16213e; padding: 20px; overflow-y: auto; border-right: 1px solid #333; flex-shrink: 0; }
+#viewer { flex: 1; position: relative; background: #1a1a2e; display: flex; align-items: center; justify-content: center; }
+h1 { font-size: 20px; color: #ff6b6b; margin-bottom: 16px; }
 h2 { font-size: 14px; color: #ffa502; margin: 16px 0 8px; }
-#drop-zone { border: 2px dashed #555; border-radius: 8px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
-#drop-zone:hover, #drop-zone.dragover { border-color: #ff6b6b; background: rgba(255,107,107,0.1); }
-#drop-zone p { font-size: 14px; color: #888; }
+
+#drop-zone {
+  border: 2px dashed #555;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+  user-select: none;
+}
+#drop-zone:hover { border-color: #ff6b6b; background: rgba(255,107,107,0.05); }
+#drop-zone.dragover { border-color: #ff6b6b; background: rgba(255,107,107,0.15); border-style: solid; }
+#drop-zone p { font-size: 14px; color: #888; margin: 4px 0; }
 #drop-zone input { display: none; }
+
 .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
 .info-row .label { color: #888; }
-.info-row .value { color: #e0e0e0; }
+.info-row .value { color: #e0e0e0; word-break: break-all; max-width: 180px; text-align: right; }
+
 .btn { display: block; width: 100%; padding: 10px; margin-top: 8px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600; }
 .btn-primary { background: #ff6b6b; color: #fff; }
 .btn-primary:hover { background: #ff5252; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 #warnings { margin-top: 12px; }
 .warning { background: rgba(255,165,2,0.1); border-left: 3px solid #ffa502; padding: 8px; margin-bottom: 6px; font-size: 12px; border-radius: 0 4px 4px 0; }
 .error { background: rgba(255,107,107,0.1); border-left: 3px solid #ff6b6b; padding: 8px; margin-bottom: 6px; font-size: 12px; border-radius: 0 4px 4px 0; }
-#status { font-size: 12px; color: #888; margin-top: 12px; }
+#status { font-size: 12px; color: #888; margin-top: 12px; min-height: 18px; }
 #mesh-info { display: none; }
-#drop-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; pointer-events: none; text-align: center; }
-#viewer-drop { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; display: none; background: rgba(255,107,107,0.15); border: 3px dashed #ff6b6b; pointer-events: none; }
-#viewer-drop.active { display: block; }
+
+#drop-hint { text-align: center; color: #555; font-size: 15px; line-height: 1.6; }
+#drop-hint big { font-size: 40px; display: block; margin-bottom: 10px; }
+
+#viewer-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(255,107,107,0.12);
+  border: 3px dashed #ff6b6b;
+  z-index: 50;
+  pointer-events: none;
+  border-radius: 8px;
+}
+#viewer-overlay.active { display: block; }
+
+#canvas-wrap { width: 100%; height: 100%; position: relative; }
+#canvas-wrap canvas { display: block; width: 100% !important; height: 100% !important; }
 </style>
 </head>
 <body>
 <div id="container">
   <div id="sidebar">
     <h1>SLDPRT Mesh Viewer</h1>
-    
+
     <div id="drop-zone">
-      <p>Drop .sldprt file here</p>
-      <p style="font-size:12px;margin-top:6px;color:#666">or click to browse</p>
+      <p><b>Drop .sldprt file here</b></p>
+      <p style="font-size:12px;color:#666">or click to browse</p>
       <input type="file" id="file-input" accept=".sldprt,.SLDPRT">
     </div>
-    
+
     <div id="mesh-info">
       <h2>Mesh Info</h2>
       <div class="info-row"><span class="label">File</span><span class="value" id="info-file"></span></div>
@@ -51,281 +80,658 @@ h2 { font-size: 14px; color: #ffa502; margin: 16px 0 8px; }
       <div class="info-row"><span class="label">Faces</span><span class="value" id="info-faces"></span></div>
       <div class="info-row"><span class="label">Triangles</span><span class="value" id="info-tris"></span></div>
       <div class="info-row"><span class="label">Size (XYZ)</span><span class="value" id="info-size"></span></div>
-      
+
       <h2>Export</h2>
       <button class="btn btn-primary" id="btn-obj" disabled>Download OBJ</button>
-      <button class="btn btn-primary" id="btn-stl" disabled>Download STL (ASCII)</button>
-      <button class="btn btn-primary" id="btn-stl-bin" disabled>Download STL (Binary)</button>
-      
+      <button class="btn btn-primary" id="btn-stl" disabled>Download STL</button>
+
       <div id="warnings"></div>
       <div id="status"></div>
     </div>
   </div>
-  
+
   <div id="viewer">
-    <div id="drop-hint">Drop a .sldprt file to view</div>
-    <div id="viewer-drop"></div>
+    <div id="viewer-overlay"></div>
+    <div id="drop-hint">
+      <big>&#128270;</big>
+      Drop a <b>.sldprt</b> file anywhere to view
+    </div>
+    <div id="canvas-wrap" style="display:none"></div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="slprd-extractor.js"></script>
 <script>
-// Wait for extractor to load
-function getExtractor() {
-    return window.slprdExtractor || (typeof extractMesh !== 'undefined' ? { extractMesh, toOBJ, toSTL, toBinarySTL } : null);
+// ============================================================
+// SLDPRT Extractor (inlined for offline use)
+// ============================================================
+var SLPRD = (function() {
+
+function _ensureBuffer(data) {
+  if (typeof Buffer !== 'undefined' && Buffer.isBuffer(data)) return data;
+  var arr = data instanceof ArrayBuffer ? new Uint8Array(data) :
+            data instanceof Uint8Array ? data : new Uint8Array(data);
+  return {
+    _data: arr, length: arr.length,
+    readUInt16LE: function(o) { return arr[o] | (arr[o+1] << 8); },
+    readInt32LE: function(o) { return arr[o] | (arr[o+1] << 8) | (arr[o+2] << 16) | (arr[o+3] << 24); },
+    readUInt32LE: function(o) { return (arr[o] | (arr[o+1] << 8) | (arr[o+2] << 16) | (arr[o+3] << 24)) >>> 0; },
+    readFloatLE: function(o) {
+      var dv = new DataView(arr.buffer, arr.byteOffset, arr.byteLength);
+      return dv.getFloat32(o, true);
+    },
+    subarray: function(s, e) { return arr.subarray(s, e); },
+    slice: function(s, e) { return arr.slice(s, e); }
+  };
 }
 
-let scene, camera, renderer, controls, currentMesh = null, currentFileName = '', currentMeshData = null;
-
-function initViewer() {
-    const container = document.getElementById('viewer');
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a2e);
-    
-    camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.001, 1000);
-    camera.position.set(0.3, 0.2, 0.3);
-    
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    container.insertBefore(renderer.domElement, container.firstChild);
-    
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.1;
-    
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir.position.set(1, 1, 1);
-    scene.add(dir);
-    scene.add(new THREE.GridHelper(1, 20, 0x333333, 0x222222));
-    scene.add(new THREE.AxesHelper(0.1));
-    
-    animate();
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-}
-
-function displayMesh(meshData) {
-    if (currentMesh) { scene.remove(currentMesh); currentMesh = null; }
-    
-    const geometry = new THREE.BufferGeometry();
-    const positions = [];
-    const normals = [];
-    
-    for (const face of meshData.faces) {
-        if (face.length < 3) continue;
-        for (let i = 1; i < face.length - 1; i++) {
-            const v0 = meshData.vertices[face[0]];
-            const v1 = meshData.vertices[face[i]];
-            const v2 = meshData.vertices[face[i + 1]];
-            if (!v0 || !v1 || !v2) continue;
-            positions.push(...v0, ...v1, ...v2);
-            
-            const ax = v1[0]-v0[0], ay = v1[1]-v0[1], az = v1[2]-v0[2];
-            const bx = v2[0]-v0[0], by = v2[1]-v0[1], bz = v2[2]-v0[2];
-            let nx = ay*bz-az*by, ny = az*bx-ax*bz, nz = ax*by-ay*bx;
-            const len = Math.sqrt(nx*nx+ny*ny+nz*nz) || 1;
-            nx /= len; ny /= len; nz /= len;
-            normals.push(nx, ny, nz, nx, ny, nz, nx, ny, nz);
-        }
+function parseOLE2(buf) {
+  buf = _ensureBuffer(buf);
+  var ss = 1 << buf.readUInt16LE(30);
+  var difat = [];
+  for (var i = 0; i < 109; i++) {
+    var s = buf.readInt32LE(76 + i * 4);
+    if (s >= 0) difat.push(s);
+  }
+  var sec = buf.readInt32LE(68);
+  while (sec >= 0 && sec < 0xfffefffe) {
+    var off = (sec + 1) * ss;
+    for (var j = 0; j < ss / 4 - 1; j++) {
+      var sv = buf.readInt32LE(off + j * 4);
+      if (sv >= 0) difat.push(sv);
     }
-    
-    if (positions.length === 0) return;
-    
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-    
-    const material = new THREE.MeshPhongMaterial({
-        color: 0xff6b6b, side: THREE.DoubleSide, flatShading: true, shininess: 30
+    sec = buf.readInt32LE(off + ss - 4);
+  }
+  var fat = [];
+  for (var k = 0; k < difat.length; k++) {
+    var off2 = (difat[k] + 1) * ss;
+    for (var j2 = 0; j2 < ss / 4; j2++) {
+      fat.push(buf.readInt32LE(off2 + j2 * 4));
+    }
+  }
+  var dirSec = buf.readUInt32LE(48);
+  var chunks = [], cur = dirSec, visited = {};
+  while (cur >= 0 && cur < 0xfffefffe && !visited[cur]) {
+    visited[cur] = 1;
+    var off3 = (cur + 1) * ss;
+    if (off3 + ss > buf.length) break;
+    chunks.push(buf.subarray(off3, off3 + ss));
+    cur = fat[cur] != null ? fat[cur] : -1;
+  }
+  var dirData = _catChunks(chunks);
+  var entries = [];
+  for (var d = 0; d + 128 <= dirData.length; d += 128) {
+    var nameLen = dirData[d + 64] | (dirData[d + 65] << 8);
+    if (nameLen === 0) continue;
+    var name = '';
+    for (var c = 0; c < nameLen - 2 && c < nameLen; c += 2) {
+      name += String.fromCharCode(dirData[d + c] | (dirData[d + c + 1] << 8));
+    }
+    entries.push({
+      name: name, type: dirData[d + 66],
+      startSector: dirData.readInt32LE(d + 116),
+      size: dirData.readUInt32LE(d + 120)
     });
-    
-    currentMesh = new THREE.Mesh(geometry, material);
-    scene.add(currentMesh);
-    
-    geometry.computeBoundingBox();
-    const bb = geometry.boundingBox;
-    const center = bb.getCenter(new THREE.Vector3());
-    const size = bb.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    camera.position.copy(center).add(new THREE.Vector3(maxDim * 1.5, maxDim * 1.0, maxDim * 1.5));
-    controls.target.copy(center);
-    controls.update();
-    
-    document.getElementById('drop-hint').style.display = 'none';
+  }
+  return { ss: ss, fat: fat, entries: entries };
 }
+
+function _catChunks(chunks) {
+  var total = 0;
+  for (var i = 0; i < chunks.length; i++) total += chunks[i].length;
+  var result = new Uint8Array(total);
+  var pos = 0;
+  for (var j = 0; j < chunks.length; j++) {
+    result.set(chunks[j], pos);
+    pos += chunks[j].length;
+  }
+  return result;
+}
+
+function readStream(buf, fat, entry, ss) {
+  buf = _ensureBuffer(buf);
+  if (entry.type !== 2 || entry.startSector < 0) return null;
+  var chunks = [], cur = entry.startSector, visited = {};
+  while (cur >= 0 && cur < 0xfffefffe && !visited[cur]) {
+    visited[cur] = 1;
+    var off = (cur + 1) * ss;
+    if (off + ss > buf.length) break;
+    chunks.push(buf.subarray(off, off + ss));
+    cur = fat[cur] != null ? fat[cur] : -1;
+  }
+  var result = _catChunks(chunks);
+  return result.subarray(0, entry.size);
+}
+
+// Inflate (raw deflate)
+var _inflate = (function() {
+  if (typeof require !== 'undefined') {
+    try {
+      var zlib = require('zlib');
+      return {
+        inflateRaw: function(b) { return zlib.inflateRawSync(b); },
+        inflate: function(b) { return zlib.inflateSync(b); },
+        brotli: function(b) { return zlib.brotliDecompressSync(b); }
+      };
+    } catch(e) {}
+  }
+  function inflateRaw(input) {
+    var out = [];
+    var win = new Uint8Array(32768);
+    var wpos = 0, bitbuf = 0, bitcnt = 0, ip = 0;
+    function ensureBits(n) { while (bitcnt < n) { if (ip >= input.length) return; bitbuf |= input[ip++] << bitcnt; bitcnt += 8; } }
+    function readBits(n) { ensureBits(n); var v = bitbuf & ((1 << n) - 1); bitbuf >>= n; bitcnt -= n; return v; }
+    function emitByte(b) { out.push(b); win[wpos] = b; wpos = (wpos + 1) & 0x7FFF; }
+    function emitRun(dist, len) { for (var i = 0; i < len; i++) { var b = win[(wpos - dist + 32768) & 0x7FFF]; out.push(b); win[wpos] = b; wpos = (wpos + 1) & 0x7FFF; } }
+    function buildCodes(lens, max) {
+      var counts = new Uint16Array(16);
+      for (var i = 0; i < max; i++) if (lens[i] > 0 && lens[i] <= 15) counts[lens[i]]++;
+      var code = 0, nc = new Uint16Array(16);
+      for (var b = 1; b <= 15; b++) { code = (code + counts[b-1]) << 1; nc[b] = code; }
+      var syms = [];
+      for (var j = 0; j < max; j++) if (lens[j] > 0) syms.push({l:lens[j], v:j, c:nc[lens[j]]++});
+      syms.sort(function(a,b){return a.c-b.c;});
+      return syms;
+    }
+    function readSym(codes) {
+      ensureBits(15);
+      for (var i = 0; i < codes.length; i++) {
+        var c = codes[i], code = 0, bits = 0;
+        for (var b = 0; b < c.l; b++) { code = (code << 1) | ((bitbuf >> (bitcnt - 1 - b)) & 1); bits++; }
+        if (code === c.c) { bitcnt -= c.l; bitbuf >>= c.l; return c.v; }
+      }
+      return 256;
+    }
+    try {
+      while (ip < input.length) {
+        var bf = readBits(1), bt = readBits(2);
+        if (bt === 0) {
+          ip = (Math.floor(ip / 8) + 1) * 8;
+          var len = input[ip] | (input[ip+1] << 8); ip += 2;
+          ip += 2; // skip nlen
+          for (var i = 0; i < len; i++) emitByte(input[ip++]);
+        } else if (bt === 1 || bt === 2) {
+          var ll, dl;
+          if (bt === 1) {
+            ll = new Uint8Array(288); dl = new Uint8Array(32);
+            for (var i = 0; i < 144; i++) ll[i] = 8;
+            for (var i = 144; i < 256; i++) ll[i] = 9;
+            for (var i = 256; i < 280; i++) ll[i] = 7;
+            for (var i = 280; i < 288; i++) ll[i] = 8;
+            for (var i = 0; i < 32; i++) dl[i] = 5;
+          } else {
+            var hlit = readBits(5) + 257, hdist = readBits(5) + 1, hclen = readBits(4) + 4;
+            var ord = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+            var cl = new Uint8Array(19);
+            for (var i = 0; i < hclen; i++) cl[ord[i]] = readBits(3);
+            var cc = buildCodes(cl, 19);
+            ll = new Uint8Array(288); dl = new Uint8Array(32);
+            var li = 0, tot = hlit + hdist;
+            while (li < tot) {
+              var sym = readSym(cc);
+              if (sym < 16) { ll[li++] = sym; }
+              else if (sym === 16) { var r = readBits(2)+3, last = ll[li-1]; for (var j=0;j<r;j++) ll[li++]=last; }
+              else if (sym === 17) { li += readBits(3)+3; }
+              else if (sym === 18) { li += readBits(7)+11; }
+            }
+          }
+          var lc = buildCodes(ll, 288);
+          var dc = buildCodes(dl, 32);
+          while (ip < input.length) {
+            var s = readSym(lc);
+            if (s === 256) break;
+            if (s < 256) { emitByte(s); }
+            else {
+              var ls = s - 257;
+              var lt = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+              var le = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+              var mlen = lt[ls] + readBits(le[ls]);
+              var ds = readSym(dc);
+              var dt = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+              var de = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+              emitRun(dt[ds]+readBits(de[ds]), mlen);
+            }
+          }
+        }
+        if (bf) break;
+      }
+    } catch(e) {}
+    return new Uint8Array(out);
+  }
+  return { inflateRaw: inflateRaw, inflate: inflateRaw, brotli: null };
+})();
+
+function _rolByte(b, s) { s &= 7; return s === 0 ? b : ((b << s) | (b >>> (8 - s))) & 0xFF; }
+
+function _findAll(buf, pat) {
+  var r = [];
+  for (var i = 0; i <= buf.length - pat.length; i++) {
+    var ok = true;
+    for (var j = 0; j < pat.length; j++) { if (buf[i+j] !== pat[j]) { ok = false; break; } }
+    if (ok) r.push(i);
+  }
+  return r;
+}
+
+function decompressOpenSX(buf) {
+  buf = _ensureBuffer(buf);
+  var key = buf._data ? buf._data[7] : buf[7];
+  var marker = [0x14, 0x00, 0x06, 0x00, 0x08, 0x00];
+  var streams = {};
+  var positions = _findAll(buf._data || buf, marker);
+  for (var p = 0; p < positions.length; p++) {
+    var mp = positions[p];
+    var si = mp - 4;
+    if (si < 0 || si + 0x1E > buf.length) continue;
+    var csz = buf.readUInt32LE(si + 0x12);
+    var nsz = buf.readUInt32LE(si + 0x1A);
+    if (nsz > 1024 || csz > 50*1024*1024) continue;
+    var nameEnd = si + 0x1E + nsz;
+    if (nameEnd > buf.length) continue;
+    var rawName = buf.subarray(si + 0x1E, nameEnd);
+    var name = '';
+    for (var i = 0; i < nsz; i++) name += String.fromCharCode(_rolByte(rawName[i], key));
+    if (!name) continue;
+    var dataEnd = nameEnd + csz;
+    if (dataEnd > buf.length) continue;
+    var f1 = buf.readUInt32LE(si + 0x0E);
+    if (f1 >= 65536 && csz > 0) {
+      var compressed = buf.subarray(nameEnd, dataEnd);
+      var decompressed = null;
+      try { decompressed = _inflate.inflateRaw(compressed); } catch(e) {}
+      if (!decompressed || decompressed.length === 0) {
+        try { decompressed = _inflate.inflate(compressed); } catch(e) {}
+      }
+      if (decompressed && decompressed.length > 0 && !streams[name]) {
+        streams[name] = new Uint8Array(decompressed);
+      }
+    }
+  }
+  return streams;
+}
+
+function findDisplayLists(buf) {
+  buf = _ensureBuffer(buf);
+  // Try old format (OLE2)
+  try {
+    var ole = parseOLE2(buf);
+    var dlEntry = null;
+    for (var i = 0; i < ole.entries.length; i++) {
+      if (ole.entries[i].name === 'DisplayLists' && ole.entries[i].type === 2) { dlEntry = ole.entries[i]; break; }
+    }
+    if (dlEntry) {
+      var dlData = readStream(buf, ole.fat, dlEntry, ole.ss);
+      if (dlData && dlData.length > 100) return dlData;
+    }
+    // Try __Zip
+    dlEntry = null;
+    for (var i = 0; i < ole.entries.length; i++) {
+      if (ole.entries[i].name === 'DisplayLists__Zip' && ole.entries[i].type === 2) { dlEntry = ole.entries[i]; break; }
+    }
+    if (dlEntry && _inflate.brotli) {
+      var dlData2 = readStream(buf, ole.fat, dlEntry, ole.ss);
+      if (dlData2 && dlData2.length > 100) {
+        try { var d = _inflate.brotli(dlData2.subarray(14)); if (d && d.length > 100) return d; } catch(e) {}
+      }
+    }
+  } catch(e) {}
+  // Try new format (openswx)
+  try {
+    var streams = decompressOpenSX(buf);
+    var names = Object.keys(streams);
+    for (var i = 0; i < names.length; i++) {
+      var name = names[i];
+      if (name.toLowerCase().indexOf('displaylist') >= 0 && streams[name].length > 100) {
+        var d = _ensureBuffer(streams[name]);
+        if (d.readUInt32LE(0) === 1 && d.readUInt32LE(4) === 1) return streams[name];
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+function parseDisplayLists(data) {
+  data = _ensureBuffer(data);
+  var result = { vertices: [], faces: [], hasVertexData: false };
+  if (!data || data.length < 100) return result;
+  var MIN_C = 0.0005, MAX_C = 0.6;
+
+  function looksLikeVertex(x, y, z) {
+    if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return false;
+    var ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
+    if (ax > MAX_C || ay > MAX_C || az > MAX_C) return false;
+    return (ax >= MIN_C ? 1 : 0) + (ay >= MIN_C ? 1 : 0) + (az >= MIN_C ? 1 : 0) >= 2;
+  }
+
+  function tryReadSurface(pos) {
+    if (pos + 8 > data.length) return null;
+    var fc = data.readUInt32LE(pos);
+    if (fc < 1 || fc > 50) return null;
+    for (var to = 4; to < 200; to += 4) {
+      var cs = pos + to;
+      if (cs + fc * 4 > data.length) break;
+      var counts = [], ok = true;
+      for (var i = 0; i < fc; i++) {
+        var v = data.readUInt32LE(cs + i * 4);
+        if (v < 2 || v > 500) { ok = false; break; }
+        counts.push(v);
+      }
+      if (!ok) continue;
+      var tv = 0; for (var j = 0; j < counts.length; j++) tv += counts[j];
+      if (tv < 3 || tv > 5000) continue;
+      var ac = cs + fc * 4, vs = -1;
+      for (var vp = ac; vp < ac + 500 && vp + 12 <= data.length; vp += 4) {
+        var x = data.readFloatLE(vp), y = data.readFloatLE(vp+4), z = data.readFloatLE(vp+8);
+        if (looksLikeVertex(x, y, z) && vp + 24 <= data.length) {
+          var x2 = data.readFloatLE(vp+12), y2 = data.readFloatLE(vp+16), z2 = data.readFloatLE(vp+20);
+          if (looksLikeVertex(x2, y2, z2)) { vs = vp; break; }
+        }
+      }
+      if (vs < 0) continue;
+      var verts = [], p = vs;
+      while (p + 12 <= data.length && verts.length < tv) {
+        var x = data.readFloatLE(p), y = data.readFloatLE(p+4), z = data.readFloatLE(p+8);
+        if (!isFinite(x) || !isFinite(y) || !isFinite(z)) break;
+        if (Math.abs(x) > MAX_C || Math.abs(y) > MAX_C || Math.abs(z) > MAX_C) break;
+        if (Math.abs(x) < MIN_C && Math.abs(y) < MIN_C && Math.abs(z) < MIN_C) break;
+        verts.push([x, y, z]);
+        p += 12;
+      }
+      if (verts.length < Math.floor(tv * 0.7)) continue;
+      return { counts: counts, verts: verts, endOffset: vs + verts.length * 12 };
+    }
+    return null;
+  }
+
+  var scanPos = 96;
+  while (scanPos + 20 <= data.length) {
+    var surf = tryReadSurface(scanPos);
+    if (surf) {
+      var vo = result.vertices.length;
+      for (var i = 0; i < surf.verts.length; i++) result.vertices.push(surf.verts[i]);
+      var fi = 0;
+      for (var j = 0; j < surf.counts.length; j++) {
+        var face = [];
+        for (var k = 0; k < surf.counts[j]; k++) face.push(vo + fi + k);
+        result.faces.push(face);
+        fi += surf.counts[j];
+      }
+      scanPos = surf.endOffset;
+    } else {
+      scanPos += 4;
+    }
+  }
+  result.hasVertexData = result.vertices.length > 0;
+  return result;
+}
+
+function extractMesh(buf) {
+  var result = { vertices: [], faces: [], partDimensions: null, warnings: [], errors: [] };
+  try {
+    var dl = findDisplayLists(buf);
+    if (!dl) { result.errors.push('No DisplayLists found'); return result; }
+    result.warnings.push('DisplayLists: ' + dl.length + ' bytes');
+    var mesh = parseDisplayLists(dl);
+    if (!mesh.hasVertexData) { result.warnings.push('No vertex data found'); return result; }
+    result.vertices = mesh.vertices;
+    result.faces = mesh.faces;
+    result.warnings.push('Extracted: ' + result.vertices.length + ' vertices, ' + result.faces.length + ' faces');
+    if (result.vertices.length > 0) {
+      var minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+      for (var i = 0; i < result.vertices.length; i++) {
+        var v = result.vertices[i];
+        if (v[0]<minX)minX=v[0]; if (v[0]>maxX)maxX=v[0];
+        if (v[1]<minY)minY=v[1]; if (v[1]>maxY)maxY=v[1];
+        if (v[2]<minZ)minZ=v[2]; if (v[2]>maxZ)maxZ=v[2];
+      }
+      result.partDimensions = {
+        x:{min:minX,max:maxX,size:maxX-minX}, y:{min:minY,max:maxY,size:maxY-minY}, z:{min:minZ,max:maxZ,size:maxZ-minZ}
+      };
+    }
+  } catch(e) { result.errors.push('Error: ' + e.message); }
+  return result;
+}
+
+function toOBJ(mesh) {
+  var obj = '# SLDPRT mesh\n# ' + mesh.vertices.length + ' vertices, ' + mesh.faces.length + ' faces\n\n';
+  for (var i = 0; i < mesh.vertices.length; i++) {
+    var v = mesh.vertices[i];
+    obj += 'v ' + v[0].toFixed(6) + ' ' + v[1].toFixed(6) + ' ' + v[2].toFixed(6) + '\n';
+  }
+  obj += '\n';
+  for (var f = 0; f < mesh.faces.length; f++) {
+    var face = mesh.faces[f];
+    if (face.length === 3) obj += 'f ' + (face[0]+1) + ' ' + (face[1]+1) + ' ' + (face[2]+1) + '\n';
+    else if (face.length > 3) {
+      for (var j = 1; j < face.length - 1; j++) {
+        obj += 'f ' + (face[0]+1) + ' ' + (face[j]+1) + ' ' + (face[j+1]+1) + '\n';
+      }
+    }
+  }
+  return obj;
+}
+
+function toSTL(mesh) {
+  var stl = 'solid sldprt\n';
+  for (var f = 0; f < mesh.faces.length; f++) {
+    var face = mesh.faces[f];
+    if (face.length < 3) continue;
+    for (var j = 1; j < face.length - 1; j++) {
+      var v0 = mesh.vertices[face[0]], v1 = mesh.vertices[face[j]], v2 = mesh.vertices[face[j+1]];
+      if (!v0||!v1||!v2) continue;
+      var ax=v1[0]-v0[0],ay=v1[1]-v0[1],az=v1[2]-v0[2];
+      var bx=v2[0]-v0[0],by=v2[1]-v0[1],bz=v2[2]-v0[2];
+      var nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;
+      var l=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
+      stl+='  facet normal '+(nx/l).toFixed(6)+' '+(ny/l).toFixed(6)+' '+(nz/l).toFixed(6)+'\n';
+      stl+='    outer loop\n';
+      stl+='      vertex '+v0[0].toFixed(6)+' '+v0[1].toFixed(6)+' '+v0[2].toFixed(6)+'\n';
+      stl+='      vertex '+v1[0].toFixed(6)+' '+v1[1].toFixed(6)+' '+v1[2].toFixed(6)+'\n';
+      stl+='      vertex '+v2[0].toFixed(6)+' '+v2[1].toFixed(6)+' '+v2[2].toFixed(6)+'\n';
+      stl+='    endloop\n  endfacet\n';
+    }
+  }
+  stl += 'endsolid sldprt\n';
+  return stl;
+}
+
+return { extractMesh: extractMesh, toOBJ: toOBJ, toSTL: toSTL };
+})();
+
+// ============================================================
+// Viewer Logic
+// ============================================================
+var currentMeshData = null;
+var currentFileName = '';
 
 function processFile(file) {
-    const ext = getExtractor();
-    if (!ext) { alert('Extractor not loaded yet. Please refresh.'); return; }
-    
-    const status = document.getElementById('status');
-    const warningsDiv = document.getElementById('warnings');
-    status.textContent = 'Processing ' + file.name + '...';
-    warningsDiv.innerHTML = '';
-    document.getElementById('mesh-info').style.display = 'none';
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const buf = new Uint8Array(e.target.result);
-            const mesh = ext.extractMesh(buf);
-            
-            if (mesh.errors.length > 0) {
-                status.textContent = 'Error';
-                mesh.errors.forEach(err => {
-                    warningsDiv.innerHTML += '<div class="error">' + err + '</div>';
-                });
-                return;
-            }
-            
-            mesh.warnings.forEach(w => {
-                warningsDiv.innerHTML += '<div class="warning">' + w + '</div>';
-            });
-            
-            if (mesh.vertices.length === 0) {
-                status.textContent = 'No mesh data found';
-                warningsDiv.innerHTML += '<div class="error">No vertex data found in this file.</div>';
-                return;
-            }
-            
-            currentFileName = file.name.replace(/\.[^.]+$/, '');
-            currentMeshData = mesh;
-            
-            document.getElementById('info-file').textContent = file.name;
-            document.getElementById('info-verts').textContent = mesh.vertices.length;
-            document.getElementById('info-faces').textContent = mesh.faces.length;
-            document.getElementById('info-tris').textContent = mesh.faces.reduce((s, f) => s + Math.max(0, f.length - 2), 0);
-            
-            if (mesh.partDimensions) {
-                const d = mesh.partDimensions;
-                document.getElementById('info-size').textContent = 
-                    d.x.size.toFixed(3) + ' x ' + d.y.size.toFixed(3) + ' x ' + d.z.size.toFixed(3);
-            }
-            
-            document.getElementById('mesh-info').style.display = 'block';
-            document.getElementById('btn-obj').disabled = false;
-            document.getElementById('btn-stl').disabled = false;
-            document.getElementById('btn-stl-bin').disabled = false;
-            
-            displayMesh(mesh);
-            status.textContent = 'Loaded: ' + file.name;
-        } catch (err) {
-            status.textContent = 'Error: ' + err.message;
-            warningsDiv.innerHTML += '<div class="error">' + err.stack + '</div>';
-        }
-    };
-    reader.readAsArrayBuffer(file);
+  document.getElementById('status').textContent = 'Processing ' + file.name + '...';
+  document.getElementById('warnings').innerHTML = '';
+  document.getElementById('mesh-info').style.display = 'none';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var buf = new Uint8Array(e.target.result);
+      var mesh = SLPRD.extractMesh(buf);
+
+      var wd = document.getElementById('warnings');
+      if (mesh.errors.length > 0) {
+        document.getElementById('status').textContent = 'Error';
+        mesh.errors.forEach(function(err) { wd.innerHTML += '<div class="error">' + err + '</div>'; });
+        return;
+      }
+      mesh.warnings.forEach(function(w) { wd.innerHTML += '<div class="warning">' + w + '</div>'; });
+
+      if (mesh.vertices.length === 0) {
+        document.getElementById('status').textContent = 'No mesh data found';
+        return;
+      }
+
+      currentFileName = file.name.replace(/\.[^.]+$/, '');
+      currentMeshData = mesh;
+
+      document.getElementById('info-file').textContent = file.name;
+      document.getElementById('info-verts').textContent = mesh.vertices.length;
+      document.getElementById('info-faces').textContent = mesh.faces.length;
+      var tris = 0;
+      for (var i = 0; i < mesh.faces.length; i++) tris += Math.max(0, mesh.faces[i].length - 2);
+      document.getElementById('info-tris').textContent = tris;
+      if (mesh.partDimensions) {
+        var d = mesh.partDimensions;
+        document.getElementById('info-size').textContent = d.x.size.toFixed(3) + ' x ' + d.y.size.toFixed(3) + ' x ' + d.z.size.toFixed(3);
+      }
+      document.getElementById('mesh-info').style.display = 'block';
+      document.getElementById('btn-obj').disabled = false;
+      document.getElementById('btn-stl').disabled = false;
+
+      renderMesh(mesh);
+      document.getElementById('status').textContent = 'Loaded: ' + file.name;
+    } catch(err) {
+      document.getElementById('status').textContent = 'Error: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Simple 2D wireframe renderer (no Three.js needed)
+function renderMesh(mesh) {
+  var wrap = document.getElementById('canvas-wrap');
+  var hint = document.getElementById('drop-hint');
+  hint.style.display = 'none';
+  wrap.style.display = 'block';
+  wrap.innerHTML = '';
+
+  var canvas = document.createElement('canvas');
+  wrap.appendChild(canvas);
+  var ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = wrap.clientWidth * window.devicePixelRatio;
+    canvas.height = wrap.clientHeight * window.devicePixelRatio;
+    canvas.style.width = wrap.clientWidth + 'px';
+    canvas.style.height = wrap.clientHeight + 'px';
+    draw();
+  }
+
+  function draw() {
+    var w = canvas.width, h = canvas.height;
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h);
+
+    var bb = mesh.partDimensions;
+    if (!bb) return;
+
+    var cx = (bb.x.min + bb.x.max) / 2;
+    var cy = (bb.y.min + bb.y.max) / 2;
+    var cz = (bb.z.min + bb.z.max) / 2;
+    var sx = bb.x.size || 1, sy = bb.y.size || 1, sz = bb.z.size || 1;
+    var maxDim = Math.max(sx, sy, sz);
+    var scale = Math.min(w, h) * 0.7 / maxDim;
+
+    function project(v) {
+      var rx = (v[0] - cx) * scale;
+      var ry = (v[1] - cy) * scale;
+      var rz = (v[2] - cz) * scale;
+      // Isometric-like projection
+      var px = rx - rz * 0.5;
+      var py = -ry + rz * 0.3;
+      return [w / 2 + px, h / 2 + py];
+    }
+
+    ctx.strokeStyle = 'rgba(255,107,107,0.6)';
+    ctx.lineWidth = Math.max(1, window.devicePixelRatio * 0.5);
+
+    for (var f = 0; f < mesh.faces.length; f++) {
+      var face = mesh.faces[f];
+      if (face.length < 3) continue;
+      for (var j = 1; j < face.length - 1; j++) {
+        var v0 = mesh.vertices[face[0]];
+        var v1 = mesh.vertices[face[j]];
+        var v2 = mesh.vertices[face[j + 1]];
+        if (!v0 || !v1 || !v2) continue;
+        var p0 = project(v0), p1 = project(v1), p2 = project(v2);
+        ctx.beginPath();
+        ctx.moveTo(p0[0], p0[1]);
+        ctx.lineTo(p1[0], p1[1]);
+        ctx.lineTo(p2[0], p2[1]);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+
+    ctx.fillStyle = '#888';
+    ctx.font = (12 * window.devicePixelRatio) + 'px sans-serif';
+    ctx.fillText(mesh.vertices.length + ' vertices, ' + mesh.faces.length + ' faces', 10, h - 10);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
 }
 
 function download(content, filename, type) {
-    const blob = new Blob([content], { type: type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  var blob = new Blob([content], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
-// === Drop zone (sidebar) ===
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
+// === Drop zone ===
+var dropZone = document.getElementById('drop-zone');
+var fileInput = document.getElementById('file-input');
 
 dropZone.addEventListener('click', function(e) {
-    e.preventDefault();
-    fileInput.click();
+  e.stopPropagation();
+  fileInput.click();
 });
 
 fileInput.addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
+  if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
+  e.target.value = '';
 });
+
+document.addEventListener('dragover', function(e) { e.preventDefault(); });
+document.addEventListener('drop', function(e) { e.preventDefault(); });
 
 dropZone.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dropZone.classList.add('dragover');
+  e.preventDefault(); e.stopPropagation();
+  dropZone.classList.add('dragover');
 });
-
 dropZone.addEventListener('dragleave', function(e) {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
+  e.preventDefault(); e.stopPropagation();
+  dropZone.classList.remove('dragover');
 });
-
 dropZone.addEventListener('drop', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        processFile(e.dataTransfer.files[0]);
-    }
+  e.preventDefault(); e.stopPropagation();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
 });
 
-// === Viewer area (full right side) ===
-const viewerEl = document.getElementById('viewer');
-const viewerDrop = document.getElementById('viewer-drop');
-
+// Viewer area drop
+var viewerEl = document.getElementById('viewer');
+var viewerOverlay = document.getElementById('viewer-overlay');
 viewerEl.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    viewerDrop.classList.add('active');
+  e.preventDefault(); e.stopPropagation();
+  viewerOverlay.classList.add('active');
 });
-
 viewerEl.addEventListener('dragleave', function(e) {
-    e.preventDefault();
-    viewerDrop.classList.remove('active');
+  e.preventDefault(); e.stopPropagation();
+  viewerOverlay.classList.remove('active');
 });
-
 viewerEl.addEventListener('drop', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    viewerDrop.classList.remove('active');
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        processFile(e.dataTransfer.files[0]);
-    }
+  e.preventDefault(); e.stopPropagation();
+  viewerOverlay.classList.remove('active');
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
 });
 
-// Also allow drop anywhere on the page
-document.body.addEventListener('dragover', function(e) {
-    e.preventDefault();
-});
-
-document.body.addEventListener('drop', function(e) {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        processFile(e.dataTransfer.files[0]);
-    }
-});
-
-// Export buttons
+// Export
 document.getElementById('btn-obj').addEventListener('click', function() {
-    const ext = getExtractor();
-    if (currentMeshData && ext) download(ext.toOBJ(currentMeshData), currentFileName + '.obj', 'text/plain');
+  if (currentMeshData) download(SLPRD.toOBJ(currentMeshData), currentFileName + '.obj', 'text/plain');
 });
 document.getElementById('btn-stl').addEventListener('click', function() {
-    const ext = getExtractor();
-    if (currentMeshData && ext) download(ext.toSTL(currentMeshData), currentFileName + '.stl', 'text/plain');
+  if (currentMeshData) download(SLPRD.toSTL(currentMeshData), currentFileName + '.stl', 'text/plain');
 });
-document.getElementById('btn-stl-bin').addEventListener('click', function() {
-    const ext = getExtractor();
-    if (currentMeshData && ext) download(ext.toBinarySTL(currentMeshData), currentFileName + '.stl', 'application/octet-stream');
-});
-
-// Resize
-window.addEventListener('resize', function() {
-    if (!camera || !renderer) return;
-    const c = document.getElementById('viewer');
-    camera.aspect = c.clientWidth / c.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(c.clientWidth, c.clientHeight);
-});
-
-initViewer();
 </script>
 </body>
 </html>
