@@ -33,7 +33,7 @@ node src/slprd-cli.js *.sldprt -f obj --scale 1000
 ```
 
 ### Browser (Self-Contained)
-
+**CURRENTLY NOT WORKING FOR SOME REASON**
 Open `web/viewer.html` in any modern browser. Drop an SLDPRT file onto the page — no server needed. Uses inlined pako for decompression.
 
 ## CLI Options
