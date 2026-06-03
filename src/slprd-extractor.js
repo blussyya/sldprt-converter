@@ -7,230 +7,33 @@
  * New format: ROL-encoded archive → openswx decompression → MFC CArchive → multi-surface tessellation
  * 
  * Usage:
- *   Node.js: const { extractMesh } = require('./slprd-extractor.js');
+ *   Node.js: const { extractMesh, toOBJ, toSTL, toBinarySTL } = require('./slprd-extractor.js');
  *   Browser: <script src="slprd-extractor.js"></script> then window.slprdExtractor.extractMesh(buf)
  */
 
 // ============================================================
-// Minimal Inflate (raw deflate, for browser compatibility)
+// Inflate: prefer Node zlib, fall back to pako, fall back to nothing
 // ============================================================
 
 const _inflate = (function() {
-    // Check if Node.js zlib is available
     if (typeof require !== 'undefined') {
         try {
             const zlib = require('zlib');
             return {
-                inflateRaw: (buf) => zlib.inflateRawSync(buf),
-                inflate: (buf) => zlib.inflateSync(buf),
-                brotli: (buf) => zlib.brotliDecompressSync(buf)
+                inflateRaw: (buf) => zlib.inflateRawSync(Buffer.from(buf)),
+                inflate: (buf) => zlib.inflateSync(Buffer.from(buf)),
+                brotli: (buf) => zlib.brotliDecompressSync(Buffer.from(buf))
             };
         } catch (e) {}
     }
-    
-    // Browser: inflate implementation based on pako (simplified)
-    // Handles raw deflate (wbits=-15) used in SLDPRT files
-    function inflateRaw(input) {
-        const output = [];
-        const win = new Uint8Array(32768);
-        let wpos = 0;
-        let bitbuf = 0, bitcnt = 0;
-        let ip = 0;
-        
-        function ensureBits(n) {
-            while (bitcnt < n) {
-                if (ip >= input.length) return;
-                bitbuf |= input[ip++] << bitcnt;
-                bitcnt += 8;
-            }
-        }
-        
-        function readBits(n) {
-            ensureBits(n);
-            const val = bitbuf & ((1 << n) - 1);
-            bitbuf >>= n;
-            bitcnt -= n;
-            return val;
-        }
-        
-        function readBytes(n) {
-            // Flush bit buffer
-            bitbuf = 0;
-            bitcnt = 0;
-            const start = ip;
-            ip += n;
-            return input.subarray(start, Math.min(ip, input.length));
-        }
-        
-        function emitByte(b) {
-            output.push(b);
-            win[wpos] = b;
-            wpos = (wpos + 1) & 0x7FFF;
-        }
-        
-        function emitBytes(src, len) {
-            for (let i = 0; i < len; i++) {
-                const b = win[(src + i) & 0x7FFF];
-                output.push(b);
-                win[wpos] = b;
-                wpos = (wpos + 1) & 0x7FFF;
-            }
-        }
-        
-        try {
-            while (ip < input.length) {
-                const bfinal = readBits(1);
-                const btype = readBits(2);
-                
-                if (btype === 0) {
-                    // Stored
-                    readBytes(2); // skip len/nlen bytes (already aligned)
-                    const len = input[ip] | (input[ip + 1] << 8);
-                    ip += 2;
-                    const nlen = input[ip] | (input[ip + 1] << 8);
-                    ip += 2;
-                    for (let i = 0; i < len; i++) {
-                        emitByte(input[ip++]);
-                    }
-                } else if (btype === 1 || btype === 2) {
-                    // Fixed or dynamic Huffman
-                    let litLens, distLens;
-                    
-                    if (btype === 1) {
-                        // Fixed codes
-                        litLens = new Uint8Array(288);
-                        distLens = new Uint8Array(32);
-                        for (let i = 0; i < 144; i++) litLens[i] = 8;
-                        for (let i = 144; i < 256; i++) litLens[i] = 9;
-                        for (let i = 256; i < 280; i++) litLens[i] = 7;
-                        for (let i = 280; i < 288; i++) litLens[i] = 8;
-                        for (let i = 0; i < 32; i++) distLens[i] = 5;
-                    } else {
-                        // Dynamic codes
-                        const hlit = readBits(5) + 257;
-                        const hdist = readBits(5) + 1;
-                        const hclen = readBits(4) + 4;
-                        
-                        const clenOrder = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
-                        const clenLens = new Uint8Array(19);
-                        for (let i = 0; i < hclen; i++) {
-                            clenLens[clenOrder[i]] = readBits(3);
-                        }
-                        
-                        // Build code length tree
-                        const clenCodes = buildFixedCodes(clenLens, 19);
-                        
-                        litLens = new Uint8Array(288);
-                        distLens = new Uint8Array(32);
-                        let li = 0, di = 0;
-                        let total = hlit + hdist;
-                        
-                        while (li + di < total) {
-                            const sym = readSymbol(clenCodes);
-                            if (sym < 16) {
-                                if (li < hlit) litLens[li++] = sym;
-                                else distLens[di++] = sym;
-                            } else if (sym === 16) {
-                                const rep = readBits(2) + 3;
-                                const last = li < hlit ? litLens[li - 1] : distLens[di - 1];
-                                for (let i = 0; i < rep; i++) {
-                                    if (li < hlit) litLens[li++] = last;
-                                    else distLens[di++] = last;
-                                }
-                            } else if (sym === 17) {
-                                li += readBits(3) + 3;
-                            } else if (sym === 18) {
-                                li += readBits(7) + 11;
-                            }
-                        }
-                    }
-                    
-                    const litCodes = buildFixedCodes(litLens, 288);
-                    const distCodes = buildFixedCodes(distLens, 32);
-                    
-                    while (ip < input.length) {
-                        const sym = readSymbol(litCodes);
-                        if (sym === 256) break;
-                        if (sym < 256) {
-                            emitByte(sym);
-                        } else {
-                            const lenSym = sym - 257;
-                            const lenTable = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
-                            const extraTable = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
-                            let len = lenTable[lenSym] + readBits(extraTable[lenSym]);
-                            
-                            const dsym = readSymbol(distCodes);
-                            const distTable = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
-                            const dextraTable = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
-                            let dist = distTable[dsym] + readBits(dextraTable[dsym]);
-                            
-                            emitBytes(wpos - dist + 32768, len);
-                        }
-                    }
-                } else {
-                    break; // bad type
-                }
-                
-                if (bfinal) break;
-            }
-        } catch (e) {
-            // Return what we have
-        }
-        
-        return new Uint8Array(output);
+    if (typeof pako !== 'undefined') {
+        return {
+            inflateRaw: (buf) => pako.inflateRaw(new Uint8Array(buf)),
+            inflate: (buf) => pako.inflate(new Uint8Array(buf)),
+            brotli: null
+        };
     }
-    
-    function buildFixedCodes(lens, maxSymbols) {
-        const counts = new Uint16Array(16);
-        for (let i = 0; i < maxSymbols; i++) {
-            if (lens[i] > 0 && lens[i] <= 15) counts[lens[i]]++;
-        }
-        
-        let code = 0;
-        const nextCode = new Uint16Array(16);
-        for (let bits = 1; bits <= 15; bits++) {
-            code = (code + counts[bits - 1]) << 1;
-            nextCode[bits] = code;
-        }
-        
-        const codes = [];
-        for (let i = 0; i < maxSymbols; i++) {
-            if (lens[i] > 0) {
-                codes.push({ len: lens[i], val: i, code: nextCode[lens[i]]++ });
-            }
-        }
-        codes.sort((a, b) => a.code - b.code);
-        return codes;
-    }
-    
-    function readSymbol(codes) {
-        ensureBits(15);
-        let code = 0;
-        let first = 0;
-        let idx = 0;
-        
-        for (const c of codes) {
-            while (idx < c.len) {
-                code = (code << 1) | ((bitbuf >> (bitcnt - 1 - idx)) & 1);
-                idx++;
-            }
-            if (code === c.code) {
-                bitcnt -= c.len;
-                bitbuf >>= c.len;
-                return c.val;
-            }
-            code = 0;
-            idx = 0;
-        }
-        
-        return 256; // end of block
-    }
-    
-    return {
-        inflateRaw: inflateRaw,
-        inflate: inflateRaw,
-        brotli: null
-    };
+    return { inflateRaw: null, inflate: null, brotli: null };
 })();
 
 function _rolByte(b, shift) {
@@ -256,64 +59,58 @@ function _decompressOpenSX(buf) {
     const key = buf[7];
     const marker = new Uint8Array([0x14, 0x00, 0x06, 0x00, 0x08, 0x00]);
     const streams = {};
-    
-    function toBuffer(arr) {
-        if (typeof Buffer !== 'undefined' && Buffer.from) return Buffer.from(arr);
-        return arr;
-    }
-    
+
     for (const mp of _findAll(buf, marker)) {
         const si = mp - 4;
         if (si < 0 || si + 0x1E > buf.length) continue;
-        
+
         const f1 = buf.readUInt32LE(si + 0x0E);
         const csz = buf.readUInt32LE(si + 0x12);
         const nsz = buf.readUInt32LE(si + 0x1A);
-        
+
         if (nsz > 1024 || csz > 50 * 1024 * 1024) continue;
-        
+
         const nameStart = si + 0x1E;
         const nameEnd = nameStart + nsz;
         if (nameEnd > buf.length) continue;
-        
+
         const rawName = buf.subarray(nameStart, nameEnd);
         let name = '';
         for (let i = 0; i < nsz; i++) {
             name += String.fromCharCode(_rolByte(rawName[i], key));
         }
         if (name.length === 0) continue;
-        
+
         const dataStart = nameEnd;
         const dataEnd = dataStart + csz;
         if (dataEnd > buf.length) continue;
-        
+
         if (f1 >= 65536 && csz > 0) {
             const compressed = buf.subarray(dataStart, dataEnd);
             let decompressed = null;
-            
-            try {
-                decompressed = _inflate.inflateRaw(compressed);
-            } catch (e) {}
-            
-            if (!decompressed || decompressed.length === 0) {
-                try {
-                    decompressed = _inflate.inflate(compressed);
-                } catch (e) {}
+
+            if (_inflate.inflateRaw) {
+                try { decompressed = _inflate.inflateRaw(compressed); } catch (e) {
+                    if (typeof console !== 'undefined') console.warn('inflateRaw failed for', name, e.message);
+                }
             }
-            
+            if (!decompressed || decompressed.length === 0) {
+                if (_inflate.inflate) {
+                    try { decompressed = _inflate.inflate(compressed); } catch (e) {
+                        if (typeof console !== 'undefined') console.warn('inflate failed for', name, e.message);
+                    }
+                }
+            }
+
             if (decompressed && decompressed.length > 0 && !streams[name]) {
-                streams[name] = toBuffer(decompressed);
+                streams[name] = decompressed;
             }
         }
     }
-    
+
     return streams;
 }
 
-/**
- * Find and decompress DisplayLists from an SLDPRT buffer.
- * Returns the decompressed DisplayLists buffer, or null.
- */
 function findDisplayLists(buf) {
     // Try old format (OLE2) first
     try {
@@ -323,8 +120,7 @@ function findDisplayLists(buf) {
             const dlData = readStream(buf, ole.fat, dlEntry, ole.ss);
             if (dlData && dlData.length > 100) return dlData;
         }
-        
-        // Try compressed (__Zip uses brotli)
+
         dlEntry = ole.entries.find(e => e.name === 'DisplayLists__Zip' && e.type === 2);
         if (dlEntry) {
             const dlData = readStream(buf, ole.fat, dlEntry, ole.ss);
@@ -332,23 +128,26 @@ function findDisplayLists(buf) {
                 try {
                     const decompressed = _inflate.brotli(dlData.subarray(14));
                     if (decompressed && decompressed.length > 100) return decompressed;
-                } catch (e) {}
+                } catch (e) {
+                    if (typeof console !== 'undefined') console.warn('brotli decompression failed:', e.message);
+                }
             }
         }
     } catch (e) {}
-    
+
     // Try new format (openswx)
     try {
         const streams = _decompressOpenSX(buf);
         for (const [name, data] of Object.entries(streams)) {
             if (name.toLowerCase().includes('displaylist') && data.length > 100) {
-                if (data.readUInt32LE(0) === 1 && data.readUInt32LE(4) === 1) {
+                const d = _ensureBuffer(data);
+                if (d.readUInt32LE(0) === 1 && d.readUInt32LE(4) === 1) {
                     return data;
                 }
             }
         }
     } catch (e) {}
-    
+
     return null;
 }
 
@@ -358,17 +157,21 @@ function findDisplayLists(buf) {
 
 function _ensureBuffer(data) {
     if (typeof Buffer !== 'undefined' && Buffer.isBuffer(data)) return data;
-    
-    // Create a wrapper around Uint8Array/ArrayBuffer with Buffer-like methods
-    const arr = data instanceof ArrayBuffer ? new Uint8Array(data) : 
+
+    const arr = data instanceof ArrayBuffer ? new Uint8Array(data) :
                 data instanceof Uint8Array ? data : new Uint8Array(data);
-    
+
+    let _dv = null;
     const wrapper = {
         _data: arr,
         length: arr.length,
-        readUInt16LE: function(off) { return arr[off] | (arr[off+1] << 8); },
-        readInt32LE: function(off) { return (arr[off] | (arr[off+1] << 8) | (arr[off+2] << 16) | (arr[off+3] << 24)); },
-        readUInt32LE: function(off) { return (arr[off] | (arr[off+1] << 8) | (arr[off+2] << 16) | (arr[off+3] << 24)) >>> 0; },
+        readUInt16LE: function(off) { return arr[off] | (arr[off + 1] << 8); },
+        readInt32LE: function(off) { return (arr[off] | (arr[off + 1] << 8) | (arr[off + 2] << 16) | (arr[off + 3] << 24)); },
+        readUInt32LE: function(off) { return (arr[off] | (arr[off + 1] << 8) | (arr[off + 2] << 16) | (arr[off + 3] << 24)) >>> 0; },
+        readFloatLE: function(off) {
+            if (!_dv) _dv = new DataView(arr.buffer, arr.byteOffset, arr.byteLength);
+            return _dv.getFloat32(off, true);
+        },
         subarray: function(start, end) { return arr.subarray(start, end); },
         slice: function(start, end) { return arr.slice(start, end); }
     };
@@ -378,35 +181,33 @@ function _ensureBuffer(data) {
 function parseOLE2(buf) {
     buf = _ensureBuffer(buf);
     const ss = 1 << buf.readUInt16LE(30);
-    
-    // Read DIFAT (109 entries from header)
+
     const difat = [];
     for (let i = 0; i < 109; i++) {
         const s = buf.readInt32LE(76 + i * 4);
         if (s >= 0) difat.push(s);
     }
-    
-    // Follow DIFAT chain for additional FAT sectors
+
     let sec = buf.readInt32LE(68);
     while (sec >= 0 && sec < 0xfffe_fffe) {
         const off = (sec + 1) * ss;
+        if (off + ss > buf.length) break;
         for (let i = 0; i < ss / 4 - 1; i++) {
             const s = buf.readInt32LE(off + i * 4);
             if (s >= 0) difat.push(s);
         }
         sec = buf.readInt32LE(off + ss - 4);
     }
-    
-    // Build FAT from DIFAT sectors
+
     const fat = [];
     for (const s of difat) {
         const off = (s + 1) * ss;
+        if (off + ss > buf.length) continue;
         for (let i = 0; i < ss / 4; i++) {
             fat.push(buf.readInt32LE(off + i * 4));
         }
     }
-    
-    // Read directory
+
     const dirSec = buf.readUInt32LE(48);
     const chunks = [];
     let cur = dirSec;
@@ -418,7 +219,7 @@ function parseOLE2(buf) {
         chunks.push(buf.subarray(off, off + ss));
         cur = fat[cur] ?? -1;
     }
-    
+
     const dirData = Buffer.concat(chunks);
     const entries = [];
     for (let i = 0; i + 128 <= dirData.length; i += 128) {
@@ -432,7 +233,7 @@ function parseOLE2(buf) {
             size: dirData.readUInt32LE(i + 120)
         });
     }
-    
+
     return { ss, fat, entries };
 }
 
@@ -457,64 +258,57 @@ function readStream(buf, fat, entry, ss) {
 // ============================================================
 
 function parseDisplayLists(data) {
+    data = _ensureBuffer(data);
     const result = {
         vertices: [],
         faces: [],
         faceVertexCounts: [],
         hasVertexData: false
     };
-    
+
     if (!data || data.length < 100) return result;
-    
-    const MIN_C = 0.0005;
-    const MAX_C = 0.6;
-    
-    // Detect format: old (single-surface) vs modern (multi-surface)
-    // Modern format has MFC archive at offset 96 with class definitions
-    const isModern = data.length > 5000 && 
+
+    const isModern = data.length > 5000 &&
                      data.readUInt32LE(0) === 1 && data.readUInt32LE(4) === 1 &&
-                     data.length > 20000; // Modern files have large DisplayLists
-    
-    // Try modern multi-surface extraction first
+                     data.length > 20000;
+
     if (isModern) {
-        const modernResult = _extractModernSurfaces(data, MIN_C, MAX_C);
+        const modernResult = _extractModernSurfaces(data);
         if (modernResult.vertices.length > 0) return modernResult;
     }
-    
-    // Fall back to old single-surface extraction
+
     return _extractOldFormat(data);
 }
 
-/**
- * Extract surfaces from modern (MFC CArchive) DisplayLists.
- * Scans the entire stream for surface tessellation patterns:
- *   u32 faceCount → u32[] faceVertexCounts → float32[] vertexPositions
- */
-function _extractModernSurfaces(data, MIN_C, MAX_C) {
+function _extractModernSurfaces(data) {
+    data = _ensureBuffer(data);
     const result = {
         vertices: [],
         faces: [],
         faceVertexCounts: [],
         hasVertexData: false
     };
-    
+
+    const MIN_C = 0.0005;
+    const MAX_C = 1.0;
+
     function looksLikeVertex(x, y, z) {
         if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return false;
         const ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
         if (ax > MAX_C || ay > MAX_C || az > MAX_C) return false;
         return (ax >= MIN_C ? 1 : 0) + (ay >= MIN_C ? 1 : 0) + (az >= MIN_C ? 1 : 0) >= 2;
     }
-    
+
     function tryReadSurface(pos) {
         if (pos + 8 > data.length) return null;
-        
+
         const faceCount = data.readUInt32LE(pos);
-        if (faceCount < 1 || faceCount > 50) return null;
-        
+        if (faceCount < 1 || faceCount > 100) return null;
+
         for (let tryOff = 4; tryOff < 200; tryOff += 4) {
             const countStart = pos + tryOff;
             if (countStart + faceCount * 4 > data.length) break;
-            
+
             const counts = [];
             let ok = true;
             for (let i = 0; i < faceCount; i++) {
@@ -523,13 +317,13 @@ function _extractModernSurfaces(data, MIN_C, MAX_C) {
                 counts.push(v);
             }
             if (!ok) continue;
-            
+
             const totalVerts = counts.reduce((a, b) => a + b, 0);
             if (totalVerts < 3 || totalVerts > 5000) continue;
-            
+
             const afterCounts = countStart + faceCount * 4;
             let vertStart = -1;
-            
+
             for (let vp = afterCounts; vp < afterCounts + 500 && vp + 12 <= data.length; vp += 4) {
                 const x = data.readFloatLE(vp);
                 const y = data.readFloatLE(vp + 4);
@@ -546,9 +340,9 @@ function _extractModernSurfaces(data, MIN_C, MAX_C) {
                     }
                 }
             }
-            
+
             if (vertStart < 0) continue;
-            
+
             const verts = [];
             let p = vertStart;
             while (p + 12 <= data.length && verts.length < totalVerts) {
@@ -561,33 +355,23 @@ function _extractModernSurfaces(data, MIN_C, MAX_C) {
                 verts.push([x, y, z]);
                 p += 12;
             }
-            
+
             if (verts.length < Math.floor(totalVerts * 0.7)) continue;
-            
-            const xs = verts.map(v => v[0]);
-            const ys = verts.map(v => v[1]);
-            const zs = verts.map(v => v[2]);
-            
+
             return {
                 offset: pos,
                 vertOffset: vertStart,
                 counts,
                 totalVerts,
                 verts,
-                bounds: {
-                    minX: Math.min(...xs), maxX: Math.max(...xs),
-                    minY: Math.min(...ys), maxY: Math.max(...ys),
-                    minZ: Math.min(...zs), maxZ: Math.max(...zs),
-                }
             };
         }
         return null;
     }
-    
-    // Scan entire stream for surface patterns
+
     const surfaces = [];
     let scanPos = 96;
-    
+
     while (scanPos + 20 <= data.length) {
         const surf = tryReadSurface(scanPos);
         if (surf) {
@@ -597,10 +381,9 @@ function _extractModernSurfaces(data, MIN_C, MAX_C) {
             scanPos += 4;
         }
     }
-    
+
     if (surfaces.length === 0) return result;
-    
-    // Build combined vertex/face arrays
+
     let vertexOffset = 0;
     for (const surf of surfaces) {
         for (const v of surf.verts) {
@@ -617,38 +400,35 @@ function _extractModernSurfaces(data, MIN_C, MAX_C) {
         }
         vertexOffset += surf.verts.length;
     }
-    
+
     result.hasVertexData = true;
     return result;
 }
 
-/**
- * Extract mesh from old-format DisplayLists (single surface).
- * Uses the original search-based approach.
- */
 function _extractOldFormat(data) {
+    data = _ensureBuffer(data);
     const result = {
         vertices: [],
         faces: [],
         faceVertexCounts: [],
         hasVertexData: false
     };
-    
+
     let lastClassRecordEnd = 0;
     for (let i = 0; i < data.length - 6; i++) {
         if (data[i] === 0xFF && data[i + 1] === 0xFF) {
             lastClassRecordEnd = i;
         }
     }
-    
+
     const candidates = [];
     const SEARCH_RADIUS = 1000;
-    
+
     for (let align = 0; align < 4; align++) {
         for (let i = Math.max(0, lastClassRecordEnd - 100) + align; i < Math.min(data.length - 200, lastClassRecordEnd + SEARCH_RADIUS); i += 4) {
             const fc = data.readUInt32LE(i);
             if (fc < 2 || fc > 100) continue;
-            
+
             let valid = true;
             const counts = [];
             for (let j = 0; j < fc; j++) {
@@ -658,20 +438,20 @@ function _extractOldFormat(data) {
                 if (v < 2 || v > 100) { valid = false; break; }
                 counts.push(v);
             }
-            
+
             if (!valid || counts.length !== fc) continue;
-            
+
             const totalVerts = counts.reduce((a, b) => a + b, 0);
             const expectedBytes = totalVerts * 12;
-            
+
             if (i + 4 + fc * 4 + expectedBytes > data.length) continue;
-            
+
             candidates.push({ offset: i, fc, counts, totalVerts });
         }
     }
-    
+
     if (candidates.length === 0) return result;
-    
+
     const seen = new Set();
     const uniqueCandidates = [];
     for (const c of candidates) {
@@ -680,15 +460,13 @@ function _extractOldFormat(data) {
             uniqueCandidates.push(c);
         }
     }
-    
+
     function scoreCandidate(off, nv) {
         const xs = [], ys = [], zs = [];
         let garbageCount = 0;
         let allSame = true;
         let firstX = null, firstY = null, firstZ = null;
-        let yNeg075 = 0;
-        let yValues = {};
-        
+
         for (let v = 0; v < nv; v++) {
             const p = off + v * 12;
             if (p + 12 > data.length) return -1;
@@ -697,43 +475,37 @@ function _extractOldFormat(data) {
             const z = data.readFloatLE(p + 8);
             if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return -1;
             if (Math.abs(x) > 100000 || Math.abs(y) > 100000 || Math.abs(z) > 100000) { garbageCount++; continue; }
-            if (Math.abs(y - (-0.075)) < 0.001) yNeg075++;
             xs.push(x); ys.push(y); zs.push(z);
-            const yKey = (y * 10000) | 0;
-            yValues[yKey] = (yValues[yKey] || 0) + 1;
             if (firstX === null) { firstX = x; firstY = y; firstZ = z; }
             else if (Math.abs(x - firstX) > 0.0001 || Math.abs(y - firstY) > 0.0001 || Math.abs(z - firstZ) > 0.0001) allSame = false;
         }
-        
+
         if (garbageCount > 2) return -1;
         if (allSame) return -1;
-        if (yNeg075 > 3 && yNeg075 > nv * 0.5) return -1;
-        const maxRepeat = Math.max(...Object.values(yValues));
-        if (maxRepeat > nv * 0.6) return -1;
-        
+
         const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
         const stddev = arr => { const m = mean(arr); return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length); };
         const sx = stddev(xs), sy = stddev(ys), sz = stddev(zs);
         const maxStd = Math.max(sx, sy, sz, 0.0001);
         const balance = (sx + sy + sz) / maxStd;
-        
+
         return balance * Math.sqrt(nv);
     }
-    
+
     uniqueCandidates.sort((a, b) => b.totalVerts - a.totalVerts);
-    
+
     let bestCandidate = null;
     let bestVertexOffset = -1;
-    
+
     for (const cand of uniqueCandidates) {
         const headerEnd = cand.offset + 4 + cand.fc * 4;
         const nv = cand.totalVerts;
         const expectedBytes = nv * 12;
         if (headerEnd + expectedBytes > data.length) continue;
-        
+
         let bestAlignScore = -1;
         let bestAlignOffset = -1;
-        
+
         for (let align = 0; align < 4; align++) {
             for (let off = headerEnd + align; off <= Math.min(data.length - expectedBytes, headerEnd + 5000); off += 4) {
                 const s = scoreCandidate(off, nv);
@@ -743,20 +515,20 @@ function _extractOldFormat(data) {
                 }
             }
         }
-        
+
         if (bestAlignOffset !== -1 && bestAlignScore > 0) {
             bestCandidate = cand;
             bestVertexOffset = bestAlignOffset;
             break;
         }
     }
-    
+
     if (bestCandidate === null || bestVertexOffset === -1) return result;
-    
+
     const faceVertexCounts = bestCandidate.counts;
     const totalVertices = bestCandidate.totalVerts;
     const vertexDataOffset = bestVertexOffset;
-    
+
     const vertices = [];
     for (let i = 0; i < totalVertices; i++) {
         const off = vertexDataOffset + i * 12;
@@ -765,11 +537,11 @@ function _extractOldFormat(data) {
         const z = data.readFloatLE(off + 8);
         vertices.push([x, y, z]);
     }
-    
+
     result.vertices = vertices;
     result.faceVertexCounts = faceVertexCounts;
     result.hasVertexData = true;
-    
+
     let offset = 0;
     const faces = [];
     for (const count of faceVertexCounts) {
@@ -781,7 +553,7 @@ function _extractOldFormat(data) {
         offset += count;
     }
     result.faces = faces;
-    
+
     return result;
 }
 
@@ -789,17 +561,11 @@ function _extractOldFormat(data) {
 // Main Extraction Function
 // ============================================================
 
-/**
- * Extract mesh from SLDPRT buffer
- * @param {Buffer|ArrayBuffer} buf - SLDPRT file data
- * @returns {Object} Mesh data with vertices and faces
- */
 function extractMesh(buf) {
-    // Convert ArrayBuffer to Buffer if needed
     if (buf instanceof ArrayBuffer) {
         buf = Buffer.from(buf);
     }
-    
+
     const result = {
         vertices: [],
         faces: [],
@@ -808,11 +574,10 @@ function extractMesh(buf) {
         warnings: [],
         errors: []
     };
-    
-    // Detect format
+
     const isOLE2 = buf[0] === 0xD0 && buf[1] === 0xCF && buf[2] === 0x11 && buf[3] === 0xE0;
     const isModern = !isOLE2 && buf.length > 2000 && buf[7] === 4;
-    
+
     if (isModern) {
         result.warnings.push('Detected modern SW 2015+ format (openswx)');
     } else if (isOLE2) {
@@ -820,37 +585,51 @@ function extractMesh(buf) {
     } else {
         result.warnings.push('Unknown format, attempting extraction...');
     }
-    
-    // Find and decompress DisplayLists
+
     const dlData = findDisplayLists(buf);
     if (!dlData) {
         result.errors.push('Failed to extract DisplayLists from SLDPRT file');
         return result;
     }
-    
+
     result.warnings.push(`DisplayLists: ${dlData.length} bytes`);
-    
-    // Parse DisplayLists
+
     const mesh = parseDisplayLists(dlData);
-    
+
     if (!mesh.hasVertexData || mesh.vertices.length === 0) {
         result.warnings.push('No vertex data found in DisplayLists stream');
         return result;
     }
-    
+
     result.vertices = mesh.vertices;
     result.faces = mesh.faces;
     result.faceVertexCounts = mesh.faceVertexCounts;
-    
+
+    // Filter degenerate faces
+    result.faces = result.faces.filter(face => {
+        if (face.length < 3) return false;
+        for (const idx of face) {
+            if (idx >= result.vertices.length) return false;
+            const v = result.vertices[idx];
+            if (!v || !isFinite(v[0]) || !isFinite(v[1]) || !isFinite(v[2])) return false;
+        }
+        const v0 = result.vertices[face[0]], v1 = result.vertices[face[1]], v2 = result.vertices[face[2]];
+        const ax = v1[0] - v0[0], ay = v1[1] - v0[1], az = v1[2] - v0[2];
+        const bx = v2[0] - v0[0], by = v2[1] - v0[1], bz = v2[2] - v0[2];
+        const crossLen = Math.sqrt((ay * bz - az * by) ** 2 + (az * bx - ax * bz) ** 2 + (ax * by - ay * bx) ** 2);
+        return crossLen > 1e-12;
+    });
+
     result.warnings.push(`Extracted: ${result.vertices.length} vertices, ${result.faces.length} faces`);
-    
+
     // Calculate part dimensions
     if (result.vertices.length > 0) {
         let minX = Infinity, maxX = -Infinity;
         let minY = Infinity, maxY = -Infinity;
         let minZ = Infinity, maxZ = -Infinity;
-        
+
         for (const [x, y, z] of result.vertices) {
+            if (!isFinite(x) || !isFinite(y) || !isFinite(z)) continue;
             if (Math.abs(x) > 100000 || Math.abs(y) > 100000 || Math.abs(z) > 100000) continue;
             minX = Math.min(minX, x);
             maxX = Math.max(maxX, x);
@@ -859,14 +638,16 @@ function extractMesh(buf) {
             minZ = Math.min(minZ, z);
             maxZ = Math.max(maxZ, z);
         }
-        
-        result.partDimensions = {
-            x: { min: minX, max: maxX, size: maxX - minX },
-            y: { min: minY, max: maxY, size: maxY - minY },
-            z: { min: minZ, max: maxZ, size: maxZ - minZ }
-        };
+
+        if (isFinite(minX)) {
+            result.partDimensions = {
+                x: { min: minX, max: maxX, size: maxX - minX },
+                y: { min: minY, max: maxY, size: maxY - minY },
+                z: { min: minZ, max: maxZ, size: maxZ - minZ }
+            };
+        }
     }
-    
+
     return result;
 }
 
@@ -874,62 +655,50 @@ function extractMesh(buf) {
 // Output Generators
 // ============================================================
 
-/**
- * Generate OBJ format string
- * @param {Object} mesh - Mesh data from extractMesh()
- * @returns {string} OBJ file content
- */
 function toOBJ(mesh) {
     let obj = '# SLDPRT mesh extracted by slprd-extractor\n';
     obj += `# ${mesh.vertices.length} vertices, ${mesh.faces.length} faces\n\n`;
-    
-    // Vertices
+
     for (const [x, y, z] of mesh.vertices) {
+        if (!isFinite(x) || !isFinite(y) || !isFinite(z)) continue;
         obj += `v ${x.toFixed(6)} ${y.toFixed(6)} ${z.toFixed(6)}\n`;
     }
-    
+
     obj += '\n';
-    
-    // Faces (OBJ uses 1-based indexing)
+
     for (const face of mesh.faces) {
         if (face.length === 3) {
             obj += `f ${face[0] + 1} ${face[1] + 1} ${face[2] + 1}\n`;
-        } else if (face.length >= 3) {
-            // Triangle fan
+        } else if (face.length > 3) {
             for (let i = 1; i < face.length - 1; i++) {
                 obj += `f ${face[0] + 1} ${face[i] + 1} ${face[i + 1] + 1}\n`;
             }
         }
     }
-    
+
     return obj;
 }
 
-/**
- * Generate STL format string (ASCII)
- * @param {Object} mesh - Mesh data from extractMesh()
- * @returns {string} STL file content
- */
 function toSTL(mesh) {
     let stl = 'solid slprd_extracted\n';
-    
+
     for (const face of mesh.faces) {
         if (face.length < 3) continue;
-        
-        // Triangle fan
+
         for (let i = 1; i < face.length - 1; i++) {
             const v0 = mesh.vertices[face[0]];
             const v1 = mesh.vertices[face[i]];
             const v2 = mesh.vertices[face[i + 1]];
-            
-            // Calculate normal (cross product)
+
+            if (!v0 || !v1 || !v2) continue;
+
             const ax = v1[0] - v0[0], ay = v1[1] - v0[1], az = v1[2] - v0[2];
             const bx = v2[0] - v0[0], by = v2[1] - v0[1], bz = v2[2] - v0[2];
             const nx = ay * bz - az * by;
             const ny = az * bx - ax * bz;
             const nz = ax * by - ay * bx;
             const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-            
+
             stl += `  facet normal ${(nx / len).toFixed(6)} ${(ny / len).toFixed(6)} ${(nz / len).toFixed(6)}\n`;
             stl += `    outer loop\n`;
             stl += `      vertex ${v0[0].toFixed(6)} ${v0[1].toFixed(6)} ${v0[2].toFixed(6)}\n`;
@@ -939,74 +708,59 @@ function toSTL(mesh) {
             stl += `  endfacet\n`;
         }
     }
-    
+
     stl += 'endsolid slprd_extracted\n';
     return stl;
 }
 
-/**
- * Generate binary STL
- * @param {Object} mesh - Mesh data from extractMesh()
- * @returns {Buffer} Binary STL data
- */
 function toBinarySTL(mesh) {
-    // Count triangles
     let triCount = 0;
     for (const face of mesh.faces) {
         if (face.length >= 3) triCount += face.length - 2;
     }
-    
-    // STL binary header: 80 bytes + 4 bytes triangle count + 50 bytes per triangle
+
     const buf = Buffer.alloc(84 + triCount * 50);
-    
-    // Header (80 bytes, can be anything)
     buf.write('SLDPRT extracted by slprd-extractor', 0);
-    
-    // Triangle count
     buf.writeUInt32LE(triCount, 80);
-    
+
     let offset = 84;
     for (const face of mesh.faces) {
         if (face.length < 3) continue;
-        
+
         for (let i = 1; i < face.length - 1; i++) {
             const v0 = mesh.vertices[face[0]];
             const v1 = mesh.vertices[face[i]];
             const v2 = mesh.vertices[face[i + 1]];
-            
-            // Normal
+
+            if (!v0 || !v1 || !v2) continue;
+
             const ax = v1[0] - v0[0], ay = v1[1] - v0[1], az = v1[2] - v0[2];
             const bx = v2[0] - v0[0], by = v2[1] - v0[1], bz = v2[2] - v0[2];
             const nx = ay * bz - az * by;
             const ny = az * bx - ax * bz;
             const nz = ax * by - ay * bx;
             const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-            
-            // Normal
+
             buf.writeFloatLE(nx / len, offset); offset += 4;
             buf.writeFloatLE(ny / len, offset); offset += 4;
             buf.writeFloatLE(nz / len, offset); offset += 4;
-            
-            // Vertex 0
+
             buf.writeFloatLE(v0[0], offset); offset += 4;
             buf.writeFloatLE(v0[1], offset); offset += 4;
             buf.writeFloatLE(v0[2], offset); offset += 4;
-            
-            // Vertex 1
+
             buf.writeFloatLE(v1[0], offset); offset += 4;
             buf.writeFloatLE(v1[1], offset); offset += 4;
             buf.writeFloatLE(v1[2], offset); offset += 4;
-            
-            // Vertex 2
+
             buf.writeFloatLE(v2[0], offset); offset += 4;
             buf.writeFloatLE(v2[1], offset); offset += 4;
             buf.writeFloatLE(v2[2], offset); offset += 4;
-            
-            // Attribute byte count (0)
+
             buf.writeUInt16LE(0, offset); offset += 2;
         }
     }
-    
+
     return buf;
 }
 
@@ -1014,12 +768,10 @@ function toBinarySTL(mesh) {
 // Exports
 // ============================================================
 
-// Node.js / CommonJS
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { extractMesh, toOBJ, toSTL, toBinarySTL, parseOLE2 };
 }
 
-// ES Modules
 if (typeof window !== 'undefined') {
     window.slprdExtractor = { extractMesh, toOBJ, toSTL, toBinarySTL, parseOLE2 };
 }

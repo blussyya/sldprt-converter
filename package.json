@@ -1,4 +1,21 @@
 {
+  "name": "sldprt-converter",
+  "version": "1.0.0",
+  "description": "Extract 3D mesh from SolidWorks .sldprt files — no SolidWorks license needed",
+  "main": "src/slprd-extractor.js",
+  "bin": {
+    "sldprt-convert": "src/sldprt-cli.js"
+  },
+  "scripts": {
+    "test": "node test/test-extractor.js",
+    "convert": "node src/sldprt-cli.js"
+  },
+  "keywords": ["solidworks", "sldprt", "mesh", "3d", "converter", "stl", "obj"],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "dependencies": {
     "pako": "^2.1.0"
   }
