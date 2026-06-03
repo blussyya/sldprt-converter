@@ -2,13 +2,134 @@
  * SLDPRT Mesh Extractor
  * Extracts 3D mesh geometry from SolidWorks .sldprt files
  * 
- * Works by parsing the OLE2 container, finding the DisplayLists stream,
- * and extracting tessellated vertex data (float32 LE triplets).
+ * Supports both old (OLE2) and new (openswx) formats.
+ * Old format: OLE2 container → DisplayLists stream → float32 vertex data
+ * New format: ROL-encoded archive → openswx decompression → MFC CArchive → multi-surface tessellation
  * 
  * Usage:
  *   Node.js: const { extractMesh } = require('./slprd-extractor.js');
  *   Browser: import { extractMesh } from './slprd-extractor.js';
  */
+
+// ============================================================
+// OpenSX Format Decompressor (SW 2015+)
+// ============================================================
+
+function _rolByte(b, shift) {
+    shift &= 7;
+    if (shift === 0) return b;
+    return ((b << shift) | (b >>> (8 - shift))) & 0xFF;
+}
+
+function _findAll(buf, pattern) {
+    const pos = [];
+    for (let i = 0; i <= buf.length - pattern.length; i++) {
+        let ok = true;
+        for (let j = 0; j < pattern.length; j++) {
+            if (buf[i + j] !== pattern[j]) { ok = false; break; }
+        }
+        if (ok) pos.push(i);
+    }
+    return pos;
+}
+
+function _decompressOpenSX(buf) {
+    const key = buf[7];
+    const marker = Buffer.from([0x14, 0x00, 0x06, 0x00, 0x08, 0x00]);
+    const streams = {};
+    
+    for (const mp of _findAll(buf, marker)) {
+        const si = mp - 4;
+        if (si < 0 || si + 0x1E > buf.length) continue;
+        
+        const f1 = buf.readUInt32LE(si + 0x0E);
+        const csz = buf.readUInt32LE(si + 0x12);
+        const nsz = buf.readUInt32LE(si + 0x1A);
+        
+        if (nsz > 1024 || csz > 50 * 1024 * 1024) continue;
+        
+        const nameStart = si + 0x1E;
+        const nameEnd = nameStart + nsz;
+        if (nameEnd > buf.length) continue;
+        
+        const rawName = buf.subarray(nameStart, nameEnd);
+        let name = '';
+        for (let i = 0; i < nsz; i++) {
+            name += String.fromCharCode(_rolByte(rawName[i], key));
+        }
+        if (name.length === 0) continue;
+        
+        const dataStart = nameEnd;
+        const dataEnd = dataStart + csz;
+        if (dataEnd > buf.length) continue;
+        
+        if (f1 >= 65536 && csz > 0) {
+            const compressed = buf.subarray(dataStart, dataEnd);
+            let decompressed = null;
+            
+            try {
+                const zlib = require('zlib');
+                decompressed = zlib.inflateRawSync(compressed);
+            } catch (e) {}
+            
+            if (!decompressed) {
+                try {
+                    const zlib = require('zlib');
+                    decompressed = zlib.inflateSync(compressed);
+                } catch (e) {}
+            }
+            
+            if (decompressed && !streams[name]) {
+                streams[name] = decompressed;
+            }
+        }
+    }
+    
+    return streams;
+}
+
+/**
+ * Find and decompress DisplayLists from an SLDPRT buffer.
+ * Returns the decompressed DisplayLists buffer, or null.
+ */
+function findDisplayLists(buf) {
+    // Try old format (OLE2) first
+    try {
+        const ole = parseOLE2(buf);
+        let dlEntry = ole.entries.find(e => e.name === 'DisplayLists' && e.type === 2);
+        if (dlEntry) {
+            const dlData = readStream(buf, ole.fat, dlEntry, ole.ss);
+            if (dlData && dlData.length > 100) return dlData;
+        }
+        
+        // Try compressed
+        dlEntry = ole.entries.find(e => e.name === 'DisplayLists__Zip' && e.type === 2);
+        if (dlEntry) {
+            const dlData = readStream(buf, ole.fat, dlEntry, ole.ss);
+            if (dlData && dlData.length > 100) {
+                try {
+                    const zlib = require('zlib');
+                    const decompressed = zlib.brotliDecompressSync(dlData.subarray(14));
+                    if (decompressed && decompressed.length > 100) return decompressed;
+                } catch (e) {}
+            }
+        }
+    } catch (e) {}
+    
+    // Try new format (openswx)
+    try {
+        const streams = _decompressOpenSX(buf);
+        for (const [name, data] of Object.entries(streams)) {
+            if (name.toLowerCase().includes('displaylist') && data.length > 100) {
+                if (data.readUInt32LE(0) === 1 && data.readUInt32LE(4) === 1) {
+                    return data;
+                }
+            }
+        }
+    } catch (e) {}
+    
+    return null;
+}
 
 // ============================================================
 // OLE2 Compound File Parser
@@ -101,24 +222,176 @@ function parseDisplayLists(data) {
         hasVertexData: false
     };
     
-    // Find the tessellation header
-    // It starts with u32 faceCount followed by per-face vertex counts
-    // We look for a valid header where faceCount is reasonable (1-1000)
-    // and the per-face counts are all 2-100
+    if (!data || data.length < 100) return result;
     
-    let headerOffset = -1;
-    let faceCount = 0;
-    let faceVertexCounts = [];
+    const MIN_C = 0.0005;
+    const MAX_C = 0.6;
     
-    // Scan for potential headers
-    // The DisplayLists stream structure is:
-    //   [class records with ff ff markers] [tessellation header] [gap data] [vertex data]
-    // The header follows the last class record. We find the last ff ff marker
-    // and scan forward from there for the first valid header.
+    // Detect format: old (single-surface) vs modern (multi-surface)
+    // Modern format has MFC archive at offset 96 with class definitions
+    const isModern = data.length > 5000 && 
+                     data.readUInt32LE(0) === 1 && data.readUInt32LE(4) === 1 &&
+                     data.length > 20000; // Modern files have large DisplayLists
     
-    // (no persistent header selection - we try all candidates below)
+    // Try modern multi-surface extraction first
+    if (isModern) {
+        const modernResult = _extractModernSurfaces(data, MIN_C, MAX_C);
+        if (modernResult.vertices.length > 0) return modernResult;
+    }
     
-    // Find last ff ff marker (end of class records)
+    // Fall back to old single-surface extraction
+    return _extractOldFormat(data);
+}
+
+/**
+ * Extract surfaces from modern (MFC CArchive) DisplayLists.
+ * Scans the entire stream for surface tessellation patterns:
+ *   u32 faceCount → u32[] faceVertexCounts → float32[] vertexPositions
+ */
+function _extractModernSurfaces(data, MIN_C, MAX_C) {
+    const result = {
+        vertices: [],
+        faces: [],
+        faceVertexCounts: [],
+        hasVertexData: false
+    };
+    
+    function looksLikeVertex(x, y, z) {
+        if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return false;
+        const ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
+        if (ax > MAX_C || ay > MAX_C || az > MAX_C) return false;
+        return (ax >= MIN_C ? 1 : 0) + (ay >= MIN_C ? 1 : 0) + (az >= MIN_C ? 1 : 0) >= 2;
+    }
+    
+    function tryReadSurface(pos) {
+        if (pos + 8 > data.length) return null;
+        
+        const faceCount = data.readUInt32LE(pos);
+        if (faceCount < 1 || faceCount > 50) return null;
+        
+        for (let tryOff = 4; tryOff < 200; tryOff += 4) {
+            const countStart = pos + tryOff;
+            if (countStart + faceCount * 4 > data.length) break;
+            
+            const counts = [];
+            let ok = true;
+            for (let i = 0; i < faceCount; i++) {
+                const v = data.readUInt32LE(countStart + i * 4);
+                if (v < 2 || v > 500) { ok = false; break; }
+                counts.push(v);
+            }
+            if (!ok) continue;
+            
+            const totalVerts = counts.reduce((a, b) => a + b, 0);
+            if (totalVerts < 3 || totalVerts > 5000) continue;
+            
+            const afterCounts = countStart + faceCount * 4;
+            let vertStart = -1;
+            
+            for (let vp = afterCounts; vp < afterCounts + 500 && vp + 12 <= data.length; vp += 4) {
+                const x = data.readFloatLE(vp);
+                const y = data.readFloatLE(vp + 4);
+                const z = data.readFloatLE(vp + 8);
+                if (looksLikeVertex(x, y, z)) {
+                    if (vp + 24 <= data.length) {
+                        const x2 = data.readFloatLE(vp + 12);
+                        const y2 = data.readFloatLE(vp + 16);
+                        const z2 = data.readFloatLE(vp + 20);
+                        if (looksLikeVertex(x2, y2, z2)) {
+                            vertStart = vp;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (vertStart < 0) continue;
+            
+            const verts = [];
+            let p = vertStart;
+            while (p + 12 <= data.length && verts.length < totalVerts) {
+                const x = data.readFloatLE(p);
+                const y = data.readFloatLE(p + 4);
+                const z = data.readFloatLE(p + 8);
+                if (!isFinite(x) || !isFinite(y) || !isFinite(z)) break;
+                if (Math.abs(x) > MAX_C || Math.abs(y) > MAX_C || Math.abs(z) > MAX_C) break;
+                if (Math.abs(x) < MIN_C && Math.abs(y) < MIN_C && Math.abs(z) < MIN_C) break;
+                verts.push([x, y, z]);
+                p += 12;
+            }
+            
+            if (verts.length < Math.floor(totalVerts * 0.7)) continue;
+            
+            const xs = verts.map(v => v[0]);
+            const ys = verts.map(v => v[1]);
+            const zs = verts.map(v => v[2]);
+            
+            return {
+                offset: pos,
+                vertOffset: vertStart,
+                counts,
+                totalVerts,
+                verts,
+                bounds: {
+                    minX: Math.min(...xs), maxX: Math.max(...xs),
+                    minY: Math.min(...ys), maxY: Math.max(...ys),
+                    minZ: Math.min(...zs), maxZ: Math.max(...zs),
+                }
+            };
+        }
+        return null;
+    }
+    
+    // Scan entire stream for surface patterns
+    const surfaces = [];
+    let scanPos = 96;
+    
+    while (scanPos + 20 <= data.length) {
+        const surf = tryReadSurface(scanPos);
+        if (surf) {
+            surfaces.push(surf);
+            scanPos = surf.vertOffset + surf.verts.length * 12;
+        } else {
+            scanPos += 4;
+        }
+    }
+    
+    if (surfaces.length === 0) return result;
+    
+    // Build combined vertex/face arrays
+    let vertexOffset = 0;
+    for (const surf of surfaces) {
+        for (const v of surf.verts) {
+            result.vertices.push(v);
+        }
+        let fi = 0;
+        for (const count of surf.counts) {
+            const faceIndices = [];
+            for (let j = 0; j < count; j++) {
+                faceIndices.push(vertexOffset + fi + j);
+            }
+            result.faces.push(faceIndices);
+            fi += count;
+        }
+        vertexOffset += surf.verts.length;
+    }
+    
+    result.hasVertexData = true;
+    return result;
+}
+
+/**
+ * Extract mesh from old-format DisplayLists (single surface).
+ * Uses the original search-based approach.
+ */
+function _extractOldFormat(data) {
+    const result = {
+        vertices: [],
+        faces: [],
+        faceVertexCounts: [],
+        hasVertexData: false
+    };
+    
     let lastClassRecordEnd = 0;
     for (let i = 0; i < data.length - 6; i++) {
         if (data[i] === 0xFF && data[i + 1] === 0xFF) {
@@ -126,9 +399,6 @@ function parseDisplayLists(data) {
         }
     }
     
-    // Collect candidate headers from a small window near the last class record.
-    // Real DisplayLists headers are always within ~500 bytes of the last ff ff marker.
-    // Scanning the full stream produces false positives from random u32 patterns.
     const candidates = [];
     const SEARCH_RADIUS = 1000;
     
@@ -160,7 +430,6 @@ function parseDisplayLists(data) {
     
     if (candidates.length === 0) return result;
     
-    // Deduplicate candidates by offset
     const seen = new Set();
     const uniqueCandidates = [];
     for (const c of candidates) {
@@ -170,14 +439,13 @@ function parseDisplayLists(data) {
         }
     }
     
-    // Score vertex blocks for each candidate header
     function scoreCandidate(off, nv) {
         const xs = [], ys = [], zs = [];
-        let yNeg075 = 0;
-        let yValues = {};
         let garbageCount = 0;
         let allSame = true;
         let firstX = null, firstY = null, firstZ = null;
+        let yNeg075 = 0;
+        let yValues = {};
         
         for (let v = 0; v < nv; v++) {
             const p = off + v * 12;
@@ -204,18 +472,12 @@ function parseDisplayLists(data) {
         const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
         const stddev = arr => { const m = mean(arr); return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length); };
         const sx = stddev(xs), sy = stddev(ys), sz = stddev(zs);
-        
-        // Real mesh vertices form a compact, balanced 3D shape.
-        // Gap data is scattered with one dominant axis (high y-spread from -0.075 interleaving).
-        // Score by: vertex count (more = better) × balance (all axes similar = better)
-        // Balance: how evenly spread the vertices are across all 3 axes (1.0=bad, 3.0=perfect)
         const maxStd = Math.max(sx, sy, sz, 0.0001);
         const balance = (sx + sy + sz) / maxStd;
         
         return balance * Math.sqrt(nv);
     }
     
-    // Pick candidate with highest vertex count that passes validation
     uniqueCandidates.sort((a, b) => b.totalVerts - a.totalVerts);
     
     let bestCandidate = null;
@@ -249,13 +511,9 @@ function parseDisplayLists(data) {
     
     if (bestCandidate === null || bestVertexOffset === -1) return result;
     
-    headerOffset = bestCandidate.offset;
-    faceCount = bestCandidate.fc;
-    faceVertexCounts = bestCandidate.counts;
+    const faceVertexCounts = bestCandidate.counts;
     const totalVertices = bestCandidate.totalVerts;
     const vertexDataOffset = bestVertexOffset;
-    
-    // Extract vertices
     
     const vertices = [];
     for (let i = 0; i < totalVertices; i++) {
@@ -270,7 +528,6 @@ function parseDisplayLists(data) {
     result.faceVertexCounts = faceVertexCounts;
     result.hasVertexData = true;
     
-    // Build face indices (triangle fans)
     let offset = 0;
     const faces = [];
     for (const count of faceVertexCounts) {
@@ -310,54 +567,31 @@ function extractMesh(buf) {
         errors: []
     };
     
-    // Parse OLE2
-    let ole;
-    try {
-        ole = parseOLE2(buf);
-    } catch (e) {
-        result.errors.push(`Failed to parse OLE2: ${e.message}`);
-        return result;
+    // Detect format
+    const isOLE2 = buf[0] === 0xD0 && buf[1] === 0xCF && buf[2] === 0x11 && buf[3] === 0xE0;
+    const isModern = !isOLE2 && buf.length > 2000 && buf[7] === 4;
+    
+    if (isModern) {
+        result.warnings.push('Detected modern SW 2015+ format (openswx)');
+    } else if (isOLE2) {
+        result.warnings.push('Detected old OLE2 format');
+    } else {
+        result.warnings.push('Unknown format, attempting extraction...');
     }
     
-    // Find DisplayLists stream (try both compressed and uncompressed)
-    let dlEntry = ole.entries.find(e => e.name === 'DisplayLists' && e.type === 2);
-    let isCompressed = false;
-    
-    if (!dlEntry) {
-        dlEntry = ole.entries.find(e => e.name === 'DisplayLists__Zip' && e.type === 2);
-        isCompressed = true;
-    }
-    
-    if (!dlEntry) {
-        result.errors.push('No DisplayLists stream found');
-        return result;
-    }
-    
-    const dlData = readStream(buf, ole.fat, dlEntry, ole.ss);
+    // Find and decompress DisplayLists
+    const dlData = findDisplayLists(buf);
     if (!dlData) {
-        result.errors.push('Failed to read DisplayLists stream');
+        result.errors.push('Failed to extract DisplayLists from SLDPRT file');
         return result;
     }
     
-    if (isCompressed) {
-        result.warnings.push('DisplayLists is compressed (__Zip format) - attempting decompression');
-        // __Zip uses brotli at offset 14
-        try {
-            const { brotliDecompressSync } = require('zlib');
-            const decompressed = brotliDecompressSync(dlData.subarray(14));
-            // The decompressed data is another encoding layer
-            // For now, we can't extract from compressed streams
-            result.warnings.push('Cannot extract from compressed DisplayLists__Zip stream');
-            result.warnings.push('Only uncompressed DisplayLists streams are supported');
-        } catch (e) {
-            result.warnings.push(`Brotli decompression failed: ${e.message}`);
-        }
-    }
+    result.warnings.push(`DisplayLists: ${dlData.length} bytes`);
     
     // Parse DisplayLists
     const mesh = parseDisplayLists(dlData);
     
-    if (!mesh.hasVertexData) {
+    if (!mesh.hasVertexData || mesh.vertices.length === 0) {
         result.warnings.push('No vertex data found in DisplayLists stream');
         return result;
     }
@@ -365,6 +599,8 @@ function extractMesh(buf) {
     result.vertices = mesh.vertices;
     result.faces = mesh.faces;
     result.faceVertexCounts = mesh.faceVertexCounts;
+    
+    result.warnings.push(`Extracted: ${result.vertices.length} vertices, ${result.faces.length} faces`);
     
     // Calculate part dimensions
     if (result.vertices.length > 0) {
