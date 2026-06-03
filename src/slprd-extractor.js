@@ -12,6 +12,21 @@
  */
 
 // ============================================================
+// Browser-safe typed array concat (replaces Buffer.concat)
+// ============================================================
+
+function _concatChunks(chunks) {
+    const total = chunks.reduce((acc, c) => acc + c.length, 0);
+    const result = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+        result.set(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk), offset);
+        offset += chunk.length;
+    }
+    return result;
+}
+
+// ============================================================
 // Inflate: prefer Node zlib, fall back to pako, fall back to nothing
 // ============================================================
 
@@ -24,7 +39,9 @@ const _inflate = (function() {
                 inflate: (buf) => zlib.inflateSync(Buffer.from(buf)),
                 brotli: (buf) => zlib.brotliDecompressSync(Buffer.from(buf))
             };
-        } catch (e) {}
+        } catch (e) {
+            if (typeof console !== 'undefined') console.warn('zlib load failed:', e.message);
+        }
     }
     if (typeof pako !== 'undefined') {
         return {
@@ -33,6 +50,7 @@ const _inflate = (function() {
             brotli: null
         };
     }
+    if (typeof console !== 'undefined') console.warn('No inflate library available (zlib or pako)');
     return { inflateRaw: null, inflate: null, brotli: null };
 })();
 
@@ -133,7 +151,9 @@ function findDisplayLists(buf) {
                 }
             }
         }
-    } catch (e) {}
+    } catch (e) {
+        if (typeof console !== 'undefined') console.warn('OLE2 parse failed:', e.message);
+    }
 
     // Try new format (openswx)
     try {
@@ -146,7 +166,9 @@ function findDisplayLists(buf) {
                 }
             }
         }
-    } catch (e) {}
+    } catch (e) {
+        if (typeof console !== 'undefined') console.warn('openswx extraction failed:', e.message);
+    }
 
     return null;
 }
@@ -220,7 +242,7 @@ function parseOLE2(buf) {
         cur = fat[cur] ?? -1;
     }
 
-    const dirData = Buffer.concat(chunks);
+    const dirData = _concatChunks(chunks);
     const entries = [];
     for (let i = 0; i + 128 <= dirData.length; i += 128) {
         const nameLen = dirData.readUInt16LE(i + 64);
@@ -250,7 +272,7 @@ function readStream(buf, fat, entry, ss) {
         chunks.push(buf.subarray(off, off + ss));
         cur = fat[cur] ?? -1;
     }
-    return Buffer.concat(chunks).subarray(0, entry.size);
+    return _concatChunks(chunks).subarray(0, entry.size);
 }
 
 // ============================================================
@@ -563,8 +585,9 @@ function _extractOldFormat(data) {
 
 function extractMesh(buf) {
     if (buf instanceof ArrayBuffer) {
-        buf = Buffer.from(buf);
+        buf = new Uint8Array(buf);
     }
+    buf = _ensureBuffer(buf);
 
     const result = {
         vertices: [],
@@ -660,8 +683,7 @@ function toOBJ(mesh) {
     obj += `# ${mesh.vertices.length} vertices, ${mesh.faces.length} faces\n\n`;
 
     for (const [x, y, z] of mesh.vertices) {
-        if (!isFinite(x) || !isFinite(y) || !isFinite(z)) continue;
-        obj += `v ${x.toFixed(6)} ${y.toFixed(6)} ${z.toFixed(6)}\n`;
+        obj += `v ${(x || 0).toFixed(6)} ${(y || 0).toFixed(6)} ${(z || 0).toFixed(6)}\n`;
     }
 
     obj += '\n';
@@ -719,11 +741,26 @@ function toBinarySTL(mesh) {
         if (face.length >= 3) triCount += face.length - 2;
     }
 
-    const buf = Buffer.alloc(84 + triCount * 50);
-    buf.write('SLDPRT extracted by slprd-extractor', 0);
-    buf.writeUInt32LE(triCount, 80);
+    const totalBytes = 84 + triCount * 50;
+    let buf;
+    if (typeof Buffer !== 'undefined') {
+        buf = Buffer.alloc(totalBytes);
+    } else {
+        buf = new Uint8Array(totalBytes);
+    }
+    const header = 'SLDPRT extracted by slprd-extractor';
+    for (let i = 0; i < Math.min(header.length, 80); i++) buf[i] = header.charCodeAt(i);
+    buf[80] = triCount & 0xFF; buf[81] = (triCount >> 8) & 0xFF;
+    buf[82] = (triCount >> 16) & 0xFF; buf[83] = (triCount >> 24) & 0xFF;
 
     let offset = 84;
+    const writeFloat = (v, off) => {
+        const f32 = new Float32Array([v]);
+        const bytes = new Uint8Array(f32.buffer);
+        buf[off] = bytes[0]; buf[off+1] = bytes[1]; buf[off+2] = bytes[2]; buf[off+3] = bytes[3];
+    };
+    const writeU16 = (v, off) => { buf[off] = v & 0xFF; buf[off+1] = (v >> 8) & 0xFF; };
+
     for (const face of mesh.faces) {
         if (face.length < 3) continue;
 
@@ -741,23 +778,23 @@ function toBinarySTL(mesh) {
             const nz = ax * by - ay * bx;
             const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
 
-            buf.writeFloatLE(nx / len, offset); offset += 4;
-            buf.writeFloatLE(ny / len, offset); offset += 4;
-            buf.writeFloatLE(nz / len, offset); offset += 4;
+            writeFloat(nx / len, offset); offset += 4;
+            writeFloat(ny / len, offset); offset += 4;
+            writeFloat(nz / len, offset); offset += 4;
 
-            buf.writeFloatLE(v0[0], offset); offset += 4;
-            buf.writeFloatLE(v0[1], offset); offset += 4;
-            buf.writeFloatLE(v0[2], offset); offset += 4;
+            writeFloat(v0[0], offset); offset += 4;
+            writeFloat(v0[1], offset); offset += 4;
+            writeFloat(v0[2], offset); offset += 4;
 
-            buf.writeFloatLE(v1[0], offset); offset += 4;
-            buf.writeFloatLE(v1[1], offset); offset += 4;
-            buf.writeFloatLE(v1[2], offset); offset += 4;
+            writeFloat(v1[0], offset); offset += 4;
+            writeFloat(v1[1], offset); offset += 4;
+            writeFloat(v1[2], offset); offset += 4;
 
-            buf.writeFloatLE(v2[0], offset); offset += 4;
-            buf.writeFloatLE(v2[1], offset); offset += 4;
-            buf.writeFloatLE(v2[2], offset); offset += 4;
+            writeFloat(v2[0], offset); offset += 4;
+            writeFloat(v2[1], offset); offset += 4;
+            writeFloat(v2[2], offset); offset += 4;
 
-            buf.writeUInt16LE(0, offset); offset += 2;
+            writeU16(0, offset); offset += 2;
         }
     }
 

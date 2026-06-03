@@ -10,6 +10,7 @@
     "test": "node test/test-extractor.js",
     "convert": "node src/sldprt-cli.js"
   },
+  "files": ["src/"],
   "keywords": ["solidworks", "sldprt", "mesh", "3d", "converter", "stl", "obj"],
   "author": "",
   "license": "MIT",
