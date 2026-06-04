@@ -1,9 +1,5 @@
-# Binary test files (download from sembiance.com for testing)
-*.SLDPRT
-*.sldprt
-*.obj
-*.stl
-test.ole2
-
-# Node modules
 node_modules/
+*.stl
+*.obj
+*.step
+*.STEP
