@@ -88,41 +88,16 @@ function triArea(a, b, c) {
     return Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]) / 2;
 }
 
-function convexHull2D(points) {
-    if (points.length < 3) return points;
-    const pts = points.map(p => [...p]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-    const cross = (O, A, B) => (A[0]-O[0])*(B[1]-O[1]) - (A[1]-O[1])*(B[0]-O[0]);
-    const lower = [];
-    for (const p of pts) {
-        while (lower.length >= 2 && cross(lower[lower.length-2], lower[lower.length-1], p) <= 0) lower.pop();
-        lower.push(p);
+function isCleanStrip(v, yMin, yMax) {
+    const yMid = (yMin + yMax) / 2;
+    let lastWasLow = v[0][1] <= yMid;
+    let alt = 0;
+    for (let i = 1; i < v.length; i++) {
+        const isLow = v[i][1] <= yMid;
+        if (isLow !== lastWasLow) alt++;
+        lastWasLow = isLow;
     }
-    const upper = [];
-    for (let i = pts.length - 1; i >= 0; i--) {
-        const p = pts[i];
-        while (upper.length >= 2 && cross(upper[upper.length-2], upper[upper.length-1], p) <= 0) upper.pop();
-        upper.push(p);
-    }
-    upper.pop(); lower.pop();
-    return lower.concat(upper);
-}
-
-function isCleanCircle(pts) {
-    if (pts.length < 3) return true;
-    const cx = pts.reduce((s,p)=>s+p[0],0)/pts.length;
-    const cz = pts.reduce((s,p)=>s+p[2],0)/pts.length;
-    const angles = pts.map(p => Math.atan2(p[2]-cz, p[0]-cx));
-    let signChanges = 0;
-    for (let i = 2; i < angles.length; i++) {
-        let d1 = angles[i-1] - angles[i-2];
-        if (d1 > Math.PI) d1 -= 2*Math.PI;
-        if (d1 < -Math.PI) d1 += 2*Math.PI;
-        let d2 = angles[i] - angles[i-1];
-        if (d2 > Math.PI) d2 -= 2*Math.PI;
-        if (d2 < -Math.PI) d2 += 2*Math.PI;
-        if (d1 * d2 < 0) signChanges++;
-    }
-    return signChanges === 0;
+    return alt >= v.length * 0.8;
 }
 
 const allVerts = [];
@@ -134,6 +109,52 @@ function addVert(v) {
     allVerts.push([...v]);
     vertMap.set(key, idx);
     return idx;
+}
+
+function fanFlatFace(v) {
+    const unique = [];
+    const seen = new Set();
+    for (const p of v) {
+        const key = p[0].toFixed(6) + ',' + p[1].toFixed(6) + ',' + p[2].toFixed(6);
+        if (!seen.has(key)) { seen.add(key); unique.push([...p]); }
+    }
+    if (unique.length < 3) return [];
+
+    const cx = unique.reduce((s, p) => s + p[0], 0) / unique.length;
+    const cy = unique.reduce((s, p) => s + p[1], 0) / unique.length;
+    const cz = unique.reduce((s, p) => s + p[2], 0) / unique.length;
+
+    let nx = 0, ny = 0, nz = 0;
+    for (let i = 2; i < unique.length; i++) {
+        const e1 = [unique[1][0]-unique[0][0], unique[1][1]-unique[0][1], unique[1][2]-unique[0][2]];
+        const e2 = [unique[i][0]-unique[0][0], unique[i][1]-unique[0][1], unique[i][2]-unique[0][2]];
+        nx = e1[1]*e2[2]-e1[2]*e2[1]; ny = e1[2]*e2[0]-e1[0]*e2[2]; nz = e1[0]*e2[1]-e1[1]*e2[0];
+        if (nx*nx+ny*ny+nz*nz > 0.01) break;
+    }
+    const nl = Math.sqrt(nx*nx+ny*ny+nz*nz) || 1;
+    nx /= nl; ny /= nl; nz /= nl;
+
+    let u, vAxis;
+    if (Math.abs(ny) > 0.9) { u = [1,0,0]; vAxis = [0,0,1]; }
+    else if (Math.abs(nx) > 0.9) { u = [0,1,0]; vAxis = [0,0,1]; }
+    else { u = [1,0,0]; vAxis = [0,1,0]; }
+
+    const indexed = unique.map((p, i) => {
+        const dx = p[0]-cx, dy = p[1]-cy, dz = p[2]-cz;
+        const pu = dx*u[0]+dy*u[1]+dz*u[2];
+        const pv = dx*vAxis[0]+dy*vAxis[1]+dz*vAxis[2];
+        return { i, angle: Math.atan2(pv, pu) };
+    });
+    indexed.sort((a, b) => a.angle - b.angle);
+    const sorted = indexed.map(x => unique[x.i]);
+
+    const ci = addVert([cx, cy, cz]);
+    const result = [];
+    for (let i = 0; i < sorted.length; i++) {
+        const next = (i + 1) % sorted.length;
+        result.push([ci, addVert(sorted[i]), addVert(sorted[next])]);
+    }
+    return result;
 }
 
 const tris = [];
@@ -148,155 +169,36 @@ for (let fi = 0; fi < faces.length; fi++) {
     const yMax = Math.max(...yVals);
     const yRange = yMax - yMin;
 
-    let altCount = 0;
-    for (let i = 1; i < v.length; i++) {
-        if (Math.abs(yVals[i] - yVals[i-1]) > yRange * 0.3) altCount++;
-    }
-    const isAlternating = altCount > v.length * 0.3;
-
+    // Detect flat face: Y constant, or X constant, or Z constant
+    let isFlat = false;
     if (yRange < 0.01) {
-        if (yMin > 4.0) continue;
-        const projected = v.map(p => [p[0], p[2]]);
-        const hull = convexHull2D(projected);
-        if (hull.length < 3) continue;
-        const hull3D = hull.map(h => {
-            const match = v.find(p => Math.abs(p[0]-h[0]) < 0.001 && Math.abs(p[2]-h[1]) < 0.001);
-            return match || [h[0], yMin, h[1]];
-        });
-        const cx = hull3D.reduce((s, p) => s + p[0], 0) / hull3D.length;
-        const cy = yMin;
-        const cz = hull3D.reduce((s, p) => s + p[2], 0) / hull3D.length;
-        const ci = addVert([cx, cy, cz]);
-        for (let i = 0; i < hull3D.length; i++) {
-            const next = (i + 1) % hull3D.length;
-            tris.push([ci, addVert(hull3D[i]), addVert(hull3D[next])]);
-        }
-        continue;
+        isFlat = true;
+    } else {
+        const xVals = v.map(p => p[0]);
+        const xRange = Math.max(...xVals) - Math.min(...xVals);
+        if (xRange < 0.01) isFlat = true;
+        const zVals = v.map(p => p[2]);
+        const zRange = Math.max(...zVals) - Math.min(zVals);
+        if (zRange < 0.01) isFlat = true;
     }
 
-    if (v.length === 4 && !isAlternating) {
+    // Simple quad (4V, not alternating)
+    if (v.length === 4 && !isCleanStrip(v, yMin, yMax)) {
         tris.push([addVert(v[0]), addVert(v[1]), addVert(v[2])]);
         tris.push([addVert(v[0]), addVert(v[2]), addVert(v[3])]);
         continue;
     }
 
-    if (isAlternating) {
-        const curve0 = [], curve1 = [];
-        for (let i = 0; i < v.length; i++) {
-            const isLow = Math.abs(yVals[i] - yMin) < Math.abs(yVals[i] - yMax);
-            if (isLow) curve0.push(v[i]);
-            else curve1.push(v[i]);
-        }
-
-        const minLen = Math.min(curve0.length, curve1.length);
-        if (minLen < 2) continue;
-        let c0 = curve0.slice(0, minLen);
-        let c1 = curve1.slice(0, minLen);
-
-        if (!isCleanCircle(c0) || !isCleanCircle(c1)) {
-            const centroid0 = [0, 0, 0];
-            const centroid1 = [0, 0, 0];
-            for (const p of c0) { centroid0[0] += p[0]; centroid0[2] += p[2]; }
-            for (const p of c1) { centroid1[0] += p[0]; centroid1[2] += p[2]; }
-            centroid0[0] /= minLen; centroid0[2] /= minLen;
-            centroid1[0] /= minLen; centroid1[2] /= minLen;
-            const angles0 = c0.map(p => Math.atan2(p[2]-centroid0[2], p[0]-centroid0[0]));
-            const angles1 = c1.map(p => Math.atan2(p[2]-centroid1[2], p[0]-centroid1[0]));
-            const matched1 = new Array(minLen).fill(-1);
-            const used1 = new Set();
-            for (let i = 0; i < minLen; i++) {
-                let bestJ = -1, bestDist = Infinity;
-                for (let j = 0; j < minLen; j++) {
-                    if (used1.has(j)) continue;
-                    let diff = Math.abs(angles0[i] - angles1[j]);
-                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
-                    if (diff < bestDist) { bestDist = diff; bestJ = j; }
-                }
-                if (bestJ >= 0) { matched1[i] = bestJ; used1.add(bestJ); }
-            }
-            const c1orig = [...c1];
-            c1 = new Array(minLen);
-            for (let i = 0; i < minLen; i++) {
-                c1[i] = matched1[i] >= 0 ? c1orig[matched1[i]] : c1orig[i];
-            }
-        }
-
-        const nu = Math.max(minLen, 8);
-        const nv = Math.max(Math.ceil(yRange / 1.5), 2);
-
-        const grid = [];
-        for (let iv = 0; iv <= nv; iv++) {
-            const row = [];
-            const t = iv / nv;
-            for (let iu = 0; iu <= nu; iu++) {
-                const frac = iu / nu;
-                const idx = frac * (minLen - 1);
-                const i0 = Math.floor(idx);
-                const i1 = Math.min(i0 + 1, minLen - 1);
-                const localT = idx - i0;
-                const p0 = [
-                    c0[i0][0] + localT * (c0[i1][0] - c0[i0][0]),
-                    c0[i0][1] + localT * (c0[i1][1] - c0[i0][1]),
-                    c0[i0][2] + localT * (c0[i1][2] - c0[i0][2])
-                ];
-                const p1 = [
-                    c1[i0][0] + localT * (c1[i1][0] - c1[i0][0]),
-                    c1[i0][1] + localT * (c1[i1][1] - c1[i0][1]),
-                    c1[i0][2] + localT * (c1[i1][2] - c1[i0][2])
-                ];
-                row.push([
-                    p0[0] + t * (p1[0] - p0[0]),
-                    p0[1] + t * (p1[1] - p0[1]),
-                    p0[2] + t * (p1[2] - p0[2])
-                ]);
-            }
-            grid.push(row);
-        }
-        for (let iv = 0; iv < nv; iv++) {
-            for (let iu = 0; iu < nu; iu++) {
-                tris.push([addVert(grid[iv][iu]), addVert(grid[iv+1][iu]), addVert(grid[iv+1][iu+1])]);
-                tris.push([addVert(grid[iv][iu]), addVert(grid[iv+1][iu+1]), addVert(grid[iv][iu+1])]);
-            }
+    // Clean strip surface (standoffs, cones, transitions)
+    if (!isFlat && yRange > 0.01 && isCleanStrip(v, yMin, yMax)) {
+        for (let i = 0; i < v.length - 2; i++) {
+            tris.push([addVert(v[i]), addVert(v[i+1]), addVert(v[i+2])]);
         }
         continue;
     }
 
-    const unique = [];
-    const seen = new Set();
-    for (const p of v) {
-        const key = p[0].toFixed(4)+','+p[1].toFixed(4)+','+p[2].toFixed(4);
-        if (!seen.has(key)) { seen.add(key); unique.push([...p]); }
-    }
-    if (unique.length < 3) continue;
-    const cx = unique.reduce((s, p) => s + p[0], 0) / unique.length;
-    const cy = unique.reduce((s, p) => s + p[1], 0) / unique.length;
-    const cz = unique.reduce((s, p) => s + p[2], 0) / unique.length;
-    const ci = addVert([cx, cy, cz]);
-    let nx = 0, ny = 0, nz = 0;
-    for (let i = 2; i < unique.length; i++) {
-        const e1 = [unique[1][0]-unique[0][0], unique[1][1]-unique[0][1], unique[1][2]-unique[0][2]];
-        const e2 = [unique[i][0]-unique[0][0], unique[i][1]-unique[0][1], unique[i][2]-unique[0][2]];
-        nx = e1[1]*e2[2]-e1[2]*e2[1]; ny = e1[2]*e2[0]-e1[0]*e2[2]; nz = e1[0]*e2[1]-e1[1]*e2[0];
-        if (nx*nx+ny*ny+nz*nz > 0.01) break;
-    }
-    const nl = Math.sqrt(nx*nx+ny*ny+nz*nz) || 1;
-    nx /= nl; ny /= nl; nz /= nl;
-    let uAxis, vAxis;
-    if (Math.abs(ny) > 0.9) { uAxis = [1,0,0]; vAxis = [0,0,1]; }
-    else if (Math.abs(nx) > 0.9) { uAxis = [0,1,0]; vAxis = [0,0,1]; }
-    else { uAxis = [1,0,0]; vAxis = [0,1,0]; }
-    const indexed = unique.map((p, i) => {
-        const dx = p[0]-cx, dy = p[1]-cy, dz = p[2]-cz;
-        const pu = dx*uAxis[0]+dy*uAxis[1]+dz*uAxis[2];
-        const pv = dx*vAxis[0]+dy*vAxis[1]+dz*vAxis[2];
-        return { i, angle: Math.atan2(pv, pu) };
-    });
-    indexed.sort((a, b) => a.angle - b.angle);
-    const sorted = indexed.map(x => unique[x.i]);
-    for (let i = 0; i < sorted.length; i++) {
-        const next = (i + 1) % sorted.length;
-        tris.push([ci, addVert(sorted[i]), addVert(sorted[next])]);
-    }
+    // Flat face or non-clean: angular fan from centroid
+    tris.push(...fanFlatFace(v));
 }
 
 const stlBuf = Buffer.alloc(84 + tris.length * 50);
@@ -328,3 +230,20 @@ fs.writeFileSync(objOut, obj);
 console.log(`Wrote ${path.basename(stlOut)} (${tris.length} triangles, ${allVerts.length} vertices)`);
 console.log(`Wrote ${path.basename(objOut)}`);
 console.log(`Surface area: ${ourArea.toFixed(1)} mm²`);
+
+const origPath = filePath.replace(/\.sldprt$/i, ' ORIGINAL.STL');
+if (fs.existsSync(origPath)) {
+    const origBuf = new Uint8Array(fs.readFileSync(origPath));
+    const origDv = new DataView(origBuf.buffer, origBuf.byteOffset, origBuf.byteLength);
+    const origTriCount = origDv.getUint32(80, true);
+    let origArea = 0;
+    for (let i = 0; i < origTriCount; i++) {
+        const base = 84 + i * 50 + 12;
+        const p0 = [origDv.getFloat32(base, true), origDv.getFloat32(base+4, true), origDv.getFloat32(base+8, true)];
+        const p1 = [origDv.getFloat32(base+12, true), origDv.getFloat32(base+16, true), origDv.getFloat32(base+20, true)];
+        const p2 = [origDv.getFloat32(base+24, true), origDv.getFloat32(base+28, true), origDv.getFloat32(base+32, true)];
+        origArea += triArea(p0, p1, p2);
+    }
+    console.log(`Original: ${origTriCount} tris, area=${origArea.toFixed(1)} mm²`);
+    console.log(`Area ratio: ${(ourArea/origArea*100).toFixed(1)}%`);
+}
