@@ -297,97 +297,24 @@ function earClipWithHoles(outer2d, holes2d, outer3d, holes3d) {
     return tris.map(t => [outer3d[t[0]], outer3d[t[1]], outer3d[t[2]]]);
   }
 
-  // Scanline fill approach: shoot horizontal rays in 2D to find filled spans
-  const n = vnorm(crs(sub(outer3d[1],outer3d[0]),sub(outer3d[2],outer3d[0])));
-  
-  let bxMin=Infinity,bxMax=-Infinity,byMin=Infinity,byMax=-Infinity;
-  for (const p of outer2d) { bxMin=Math.min(bxMin,p[0]);bxMax=Math.max(bxMax,p[0]);byMin=Math.min(byMin,p[1]);byMax=Math.max(byMax,p[1]); }
-  for (const h of holes2d) for (const p of h) { bxMin=Math.min(bxMin,p[0]);bxMax=Math.max(bxMax,p[0]);byMin=Math.min(byMin,p[1]);byMax=Math.max(byMax,p[1]); }
-  
-  const w = bxMax-bxMin, h2 = byMax-byMin;
-  if (w < 1e-6 || h2 < 1e-6) return [];
-  
-  const faceArea = w * h2;
-  const gridStep = faceArea > 500 ? 4.0 : faceArea > 100 ? 2.5 : 1.0;
-  const ny = Math.max(2, Math.ceil(h2 / gridStep));
-  
-  const uBasis = Math.abs(n[0]) < Math.abs(n[1]) ? vnorm(crs(n, [1,0,0])) : vnorm(crs(n, [0,1,0]));
-  const vBasis = crs(n, uBasis);
-  const origin3d = sub(outer3d[0], add(scl(uBasis, outer2d[0][0]), scl(vBasis, outer2d[0][1])));
-  const to3d = (p2d) => add(add(scl(uBasis, p2d[0]), scl(vBasis, p2d[1])), origin3d);
-  
-  const result3d = [];
-  
-  for (let iy = 0; iy < ny; iy++) {
-    const y0 = byMin + h2 * iy / ny;
-    const y1 = byMin + h2 * (iy + 1) / ny;
-    const ym = (y0 + y1) / 2;
-    
-    const outerXs = [];
-    for (let i = 0; i < outer2d.length; i++) {
-      const j = (i+1) % outer2d.length;
-      const yi = outer2d[i][1], yj = outer2d[j][1];
-      if ((yi <= ym && yj > ym) || (yj <= ym && yi > ym)) {
-        const t = (ym - yi) / (yj - yi);
-        outerXs.push(outer2d[i][0] + t * (outer2d[j][0] - outer2d[i][0]));
-      }
+  const tris = earClip(outer2d);
+  const result = [];
+  for (const t of tris) {
+    if (t[0] >= outer3d.length || t[1] >= outer3d.length || t[2] >= outer3d.length) continue;
+    const a = outer3d[t[0]], b = outer3d[t[1]], c = outer3d[t[2]];
+    if (!a || !b || !c) continue;
+    const tc = [(a[0]+b[0]+c[0])/3, (a[1]+b[1]+c[1])/3, (a[2]+b[2]+c[2])/3];
+    const n = vnorm(crs(sub(outer3d[1],outer3d[0]),sub(outer3d[2],outer3d[0])));
+    const u = Math.abs(n[0]) < Math.abs(n[1]) ? vnorm(crs(n, [1,0,0])) : vnorm(crs(n, [0,1,0]));
+    const v = crs(n, u);
+    const tcP2 = [dot(tc, u), dot(tc, v)];
+    let insideHole = false;
+    for (const hp2d of holes2d) {
+      if (ptInPoly(tcP2[0], tcP2[1], hp2d)) { insideHole = true; break; }
     }
-    outerXs.sort((a,b) => a - b);
-    
-    const holeXs = [];
-    for (const hole of holes2d) {
-      const hxs = [];
-      for (let i = 0; i < hole.length; i++) {
-        const j = (i+1) % hole.length;
-        const yi = hole[i][1], yj = hole[j][1];
-        if ((yi <= ym && yj > ym) || (yj <= ym && yi > ym)) {
-          const t = (ym - yi) / (yj - yi);
-          hxs.push(hole[i][0] + t * (hole[j][0] - hole[i][0]));
-        }
-      }
-      hxs.sort((a,b) => a - b);
-      holeXs.push(hxs);
-    }
-    
-    const spans = [];
-    for (let oi = 0; oi < outerXs.length - 1; oi += 2) {
-      let xStart = outerXs[oi], xEnd = outerXs[oi + 1];
-      if (xEnd <= xStart) continue;
-      const clipped = [[xStart, xEnd]];
-      for (const hxs of holeXs) {
-        for (let hi = 0; hi < hxs.length - 1; hi += 2) {
-          const hxS = hxs[hi], hxE = hxs[hi+1];
-          const newClipped = [];
-          for (const [cs, ce] of clipped) {
-            if (hxE <= cs || hxS >= ce) { newClipped.push([cs, ce]); continue; }
-            if (hxS > cs) newClipped.push([cs, hxS]);
-            if (hxE < ce) newClipped.push([hxE, ce]);
-          }
-          clipped.length = 0;
-          clipped.push(...newClipped);
-        }
-      }
-      spans.push(...clipped);
-    }
-    
-    for (const [xs, xe] of spans) {
-      if (xe - xs < 1e-6) continue;
-      const spanW = xe - xs;
-      const snx = Math.max(1, Math.ceil(spanW / gridStep));
-      const b3 = [], t3 = [];
-      for (let ix = 0; ix <= snx; ix++) {
-        const x = xs + spanW * ix / snx;
-        b3.push(to3d([x, y0]));
-        t3.push(to3d([x, y1]));
-      }
-      for (let ix = 0; ix < snx; ix++) {
-        result3d.push([b3[ix], b3[ix+1], t3[ix]]);
-        result3d.push([b3[ix+1], t3[ix+1], t3[ix]]);
-      }
-    }
+    if (!insideHole) result.push([a, b, c]);
   }
-  
-  return result3d;
+  return result;
 }
 
 function triContainsAnyPoint(tri, pts) {
