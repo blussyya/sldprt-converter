@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { readSLDPRT, findStream } = require('./sldprt-reader');
+const { findAll } = require('./utils');
 
 const args = process.argv.slice(2);
 if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
@@ -21,10 +22,14 @@ if (!fs.existsSync(filePath)) {
 
 let stlOut, objOut;
 if (args[1]) {
-    const ext = path.extname(args[1]);
-    const base = args[1].replace(/\.(stl|obj)$/i, '');
-    stlOut = base + '.stl';
-    objOut = base + '.obj';
+    const ext = path.extname(args[1]).toLowerCase();
+    if (ext === '.stl' || ext === '.obj') {
+        stlOut = args[1].replace(/\.(stl|obj)$/i, '.stl');
+        objOut = args[1].replace(/\.(stl|obj)$/i, '.obj');
+    } else {
+        stlOut = args[1] + '.stl';
+        objOut = args[1] + '.obj';
+    }
 } else {
     stlOut = filePath.replace(/\.sldprt$/i, '_converted.stl');
     objOut = filePath.replace(/\.sldprt$/i, '_converted.obj');
@@ -42,23 +47,12 @@ const dl = dlStream.data;
 const dv = new DataView(dl.buffer, dl.byteOffset, dl.byteLength);
 const SCALE = 1000;
 
-function findAll(buf, pattern) {
-    const pos = [];
-    for (let i = 0; i <= buf.length - pattern.length; i++) {
-        let ok = true;
-        for (let j = 0; j < pattern.length; j++) {
-            if (buf[i + j] !== pattern[j]) { ok = false; break; }
-        }
-        if (ok) pos.push(i);
-    }
-    return pos;
-}
-
 const marker = new Uint8Array([0x0c, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00]);
 const markerPositions = findAll(dl, marker);
 
 const faces = [];
 for (const mp of markerPositions) {
+    if (mp < 4) continue;
     const edgeCount = dv.getUint32(mp - 4, true);
     if (edgeCount < 1 || edgeCount > 500) continue;
     const faceType = dv.getUint32(mp + 8, true);
@@ -178,7 +172,7 @@ for (let fi = 0; fi < faces.length; fi++) {
         const xRange = Math.max(...xVals) - Math.min(...xVals);
         if (xRange < 0.01) isFlat = true;
         const zVals = v.map(p => p[2]);
-        const zRange = Math.max(...zVals) - Math.min(zVals);
+        const zRange = Math.max(...zVals) - Math.min(...zVals);
         if (zRange < 0.01) isFlat = true;
     }
 

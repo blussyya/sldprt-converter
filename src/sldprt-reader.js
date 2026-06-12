@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const pako = require('pako');
+const { findAll } = require('./utils');
 
 // SLDPRT file reader
 // SolidWorks SLDPRT files are OLE2 compound documents containing
@@ -13,18 +14,6 @@ const pako = require('pako');
 function rolByte(b, s) {
     s &= 7;
     return s === 0 ? b : ((b << s) | (b >>> (8 - s))) & 0xFF;
-}
-
-function findAll(buf, pattern) {
-    const pos = [];
-    for (let i = 0; i <= buf.length - pattern.length; i++) {
-        let ok = true;
-        for (let j = 0; j < pattern.length; j++) {
-            if (buf[i + j] !== pattern[j]) { ok = false; break; }
-        }
-        if (ok) pos.push(i);
-    }
-    return pos;
 }
 
 function readSLDPRT(filePath) {

@@ -11,7 +11,6 @@
  *   Browser: <script src="slprd-extractor.js"></script> then window.slprdExtractor.extractMesh(buf)
  */
 
-// ============================================================
 // Browser-safe typed array concat (replaces Buffer.concat)
 // ============================================================
 
@@ -27,8 +26,26 @@ function _concatChunks(chunks) {
 }
 
 // ============================================================
-// Inflate: prefer Node zlib, fall back to pako, fall back to nothing
+// Shared utility: findAll (matches pattern in buffer)
 // ============================================================
+
+let _findAll;
+if (typeof require !== 'undefined') {
+    try { _findAll = require('./utils').findAll; } catch (e) {}
+}
+if (!_findAll) {
+    _findAll = function(buf, pattern) {
+        const pos = [];
+        for (let i = 0; i <= buf.length - pattern.length; i++) {
+            let ok = true;
+            for (let j = 0; j < pattern.length; j++) {
+                if (buf[i + j] !== pattern[j]) { ok = false; break; }
+            }
+            if (ok) pos.push(i);
+        }
+        return pos;
+    };
+}
 
 const _inflate = (function() {
     if (typeof require !== 'undefined') {
@@ -58,18 +75,6 @@ function _rolByte(b, shift) {
     shift &= 7;
     if (shift === 0) return b;
     return ((b << shift) | (b >>> (8 - shift))) & 0xFF;
-}
-
-function _findAll(buf, pattern) {
-    const pos = [];
-    for (let i = 0; i <= buf.length - pattern.length; i++) {
-        let ok = true;
-        for (let j = 0; j < pattern.length; j++) {
-            if (buf[i + j] !== pattern[j]) { ok = false; break; }
-        }
-        if (ok) pos.push(i);
-    }
-    return pos;
 }
 
 function _decompressOpenSX(buf) {
@@ -184,7 +189,7 @@ function _ensureBuffer(data) {
                 data instanceof Uint8Array ? data : new Uint8Array(data);
 
     let _dv = null;
-    const wrapper = {
+    const wrapper = new Proxy({
         _data: arr,
         length: arr.length,
         readUInt16LE: function(off) { return arr[off] | (arr[off + 1] << 8); },
@@ -195,8 +200,29 @@ function _ensureBuffer(data) {
             return _dv.getFloat32(off, true);
         },
         subarray: function(start, end) { return arr.subarray(start, end); },
-        slice: function(start, end) { return arr.slice(start, end); }
-    };
+        slice: function(start, end) { return arr.slice(start, end); },
+        toString: function(encoding, start, end) {
+            if (encoding === 'utf16le') {
+                const s = start || 0;
+                const e = end !== undefined ? end : arr.length;
+                let str = '';
+                for (let i = s; i < e; i += 2) str += String.fromCharCode(arr[i] | (arr[i + 1] << 8));
+                return str;
+            }
+            const s = start || 0;
+            const e = end !== undefined ? end : arr.length;
+            let str = '';
+            for (let i = s; i < e; i++) str += String.fromCharCode(arr[i]);
+            return str;
+        }
+    }, {
+        get: function(target, prop) {
+            if (typeof prop === 'string' && /^\d+$/.test(prop)) {
+                return arr[parseInt(prop)];
+            }
+            return target[prop];
+        }
+    });
     return wrapper;
 }
 
@@ -506,7 +532,7 @@ function _extractOldFormat(data) {
         if (allSame) return -1;
 
         const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-        const stddev = arr => { const m = mean(arr); return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length); };
+        const stddev = arr => { const m = mean(arr); return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / Math.max(1, arr.length - 1)); };
         const sx = stddev(xs), sy = stddev(ys), sz = stddev(zs);
         const maxStd = Math.max(sx, sy, sz, 0.0001);
         const balance = (sx + sy + sz) / maxStd;
@@ -750,8 +776,13 @@ function toBinarySTL(mesh) {
     }
     const header = 'SLDPRT extracted by slprd-extractor';
     for (let i = 0; i < Math.min(header.length, 80); i++) buf[i] = header.charCodeAt(i);
-    buf[80] = triCount & 0xFF; buf[81] = (triCount >> 8) & 0xFF;
-    buf[82] = (triCount >> 16) & 0xFF; buf[83] = (triCount >> 24) & 0xFF;
+    if (typeof DataView !== 'undefined') {
+        const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+        dv.setUint32(80, triCount, true);
+    } else {
+        buf[80] = triCount & 0xFF; buf[81] = (triCount >> 8) & 0xFF;
+        buf[82] = (triCount >> 16) & 0xFF; buf[83] = (triCount >> 24) & 0xFF;
+    }
 
     let offset = 84;
     const writeFloat = (v, off) => {
