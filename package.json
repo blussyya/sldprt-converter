@@ -4,10 +4,17 @@
   "private": true,
   "type": "commonjs",
   "description": "Convert SolidWorks SLDPRT files to STL/OBJ",
-  "main": "src/convert.js",
+  "main": "src/slprd-extractor.js",
   "bin": {
     "sldprt-convert": "src/convert.js"
   },
+  "files": [
+    "src/convert.js",
+    "src/slprd-extractor.js",
+    "src/sldprt-reader.js",
+    "src/utils.js",
+    "LICENSE"
+  ],
   "scripts": {
     "convert": "node src/convert.js"
   },
