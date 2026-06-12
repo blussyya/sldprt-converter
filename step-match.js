@@ -1,5 +1,6 @@
 const fs = require('fs');
-const step = fs.readFileSync('C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.STEP', 'utf8');
+const STEP_PATH = process.argv[2] || 'C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.STEP';
+const step = fs.readFileSync(STEP_PATH, 'utf8');
 let m;
 
 // CARTESIAN_POINT
@@ -125,7 +126,7 @@ for (const tf of stepFaces) {
 
 // Parse SLDPRT
 const { readSLDPRT, findStream } = require('./src/sldprt-reader');
-const fp = 'C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.SLDPRT';
+const fp = process.argv[3] || 'C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.SLDPRT';
 const { raw, streams } = readSLDPRT(fp);
 const dl = findStream(streams, 'Contents/DisplayLists').data;
 const dv = new DataView(dl.buffer, dl.byteOffset, dl.byteLength);

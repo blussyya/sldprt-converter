@@ -1,7 +1,8 @@
 const fs = require('fs');
 
-const STEP_PATH = 'C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.STEP';
-const STL_PATH = 'C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\step-tess-test.stl';
+const STEP_PATH = process.argv[2] || 'C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.STEP';
+const STL_PATH = process.argv[3] || '';
+const STL_OUT = process.argv[4] || 'step-tess-output.stl';
 
 const sub = (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
 const add = (a,b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]];
