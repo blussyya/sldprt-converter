@@ -1,5 +1,6 @@
 const fs = require('fs');
-const step = fs.readFileSync('C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.STEP','utf8');
+const STEP_PATH = process.argv[2] || 'C:\\Users\\basha\\Downloads\\isolated-usb-hub-case-1.snapshot.4\\USB hub case BOTTOM.STEP';
+const step = fs.readFileSync(STEP_PATH,'utf8');
 
 // Parse entities
 const ents={};let cId=null,cTx='';
