@@ -8,14 +8,14 @@
  *   node sldprt-cli.js input.sldprt -o output.obj      → output.obj
  *   node sldprt-cli.js input.sldprt -f stl             → input.stl
  *   node sldprt-cli.js input.sldprt -f binary-stl      → input.stl (binary)
- *   node sldprt-cli.js input.sldprt --scale 1000       → OBJ with coords ×1000
+ *   node sldprt-cli.js input.sldprt --scale 1          → OBJ in meters (default: mm)
  *   node sldprt-cli.js input.sldprt --info             → info only, no output
  *   node sldprt-cli.js file1.sldprt file2.sldprt       → batch convert
  */
 
 const fs = require('fs');
 const path = require('path');
-const { extractMesh, toOBJ, toSTL, toBinarySTL } = require('./slprd-extractor.js');
+const { extractMesh, toOBJ, toSTL, toBinarySTL, setVerbose } = require('./sldprt-extractor.js');
 
 function usage() {
     console.log(`SLDPRT Mesh Converter — extracts 3D mesh from SolidWorks .sldprt files
@@ -26,14 +26,17 @@ Usage:
 Options:
   -o, --output <path>   Output file path (default: same name as input)
   -f, --format <fmt>    Output format: obj (default), stl, binary-stl
-  --scale <factor>      Scale coordinates (e.g. 1000 for mm if input is meters)
+  --scale <factor>      Scale factor (default: 1000, SolidWorks stores meters, output in mm)
   --info                Show mesh info without writing output
   -h, --help            Show this help
+  --verbose             Show detailed parsing logs
 
 Examples:
-  node sldprt-cli.js doneConsole.sldprt
-  node sldprt-cli.js doneConsole.sldprt -f stl --scale 1000
-  node sldprt-cli.js *.sldprt --info`);
+  node sldprt-cli.js doneConsole.sldprt              # outputs doneConsole.obj (mm)
+  node sldprt-cli.js doneConsole.sldprt -f stl       # outputs doneConsole.stl
+  node sldprt-cli.js doneConsole.sldprt --scale 1    # output in meters
+  node sldprt-cli.js *.sldprt --info                  # batch info
+  node sldprt-cli.js part.sldprt --verbose`);
 }
 
 function parseArgs(args) {
@@ -41,8 +44,9 @@ function parseArgs(args) {
         files: [],
         output: null,
         format: 'obj',
-        scale: 1,
-        info: false
+        scale: 1000,
+        info: false,
+        verbose: false
     };
 
     let i = 0;
@@ -59,6 +63,7 @@ function parseArgs(args) {
             }
         }
         else if (a === '--info') { opts.info = true; }
+        else if (a === '--verbose') { opts.verbose = true; }
         else if (!a.startsWith('-')) { opts.files.push(a); }
         else { console.error(`Unknown option: ${a}`); process.exit(1); }
         i++;
@@ -75,6 +80,7 @@ function processFile(filePath, opts) {
 
     console.log(`Processing: ${filePath}`);
 
+    setVerbose(opts.verbose);
     const buf = fs.readFileSync(absPath);
     const mesh = extractMesh(buf);
 

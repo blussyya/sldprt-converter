@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * DEPRECATED: Use sldprt-cli.js instead.
+ * This legacy pipeline lacks modern format support, --scale, --format, and --info.
+ * Run: node src/sldprt-cli.js <input.sldprt>
+ */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -9,6 +14,7 @@ const args = process.argv.slice(2);
 if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.log('Usage: node src/convert.js <input.sldprt> [output.stl|output.obj]');
     console.log('');
+    console.log('DEPRECATED: Use sldprt-cli.js instead (node src/sldprt-cli.js --help)');
     console.log('Converts a SolidWorks SLDPRT file to STL and OBJ format.');
     console.log('If no output path is given, writes <input>_converted.stl and <input>_converted.obj');
     process.exit(0);
@@ -82,12 +88,22 @@ function triArea(a, b, c) {
     return Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]) / 2;
 }
 
-function isCleanStrip(v, yMin, yMax) {
-    const yMid = (yMin + yMax) / 2;
-    let lastWasLow = v[0][1] <= yMid;
+function isCleanStrip(v, faceNormal) {
+    const absN = [Math.abs(faceNormal[0]), Math.abs(faceNormal[1]), Math.abs(faceNormal[2])];
+    let primaryAxis = 1;
+    if (absN[0] > absN[1] && absN[0] > absN[2]) primaryAxis = 0;
+    else if (absN[2] > absN[1] && absN[2] > absN[0]) primaryAxis = 2;
+
+    const coords = v.map(p => p[primaryAxis]);
+    const cMin = Math.min(...coords);
+    const cMax = Math.max(...coords);
+    if (cMax - cMin < 0.01) return false;
+
+    const cMid = (cMin + cMax) / 2;
+    let lastWasLow = coords[0] <= cMid;
     let alt = 0;
     for (let i = 1; i < v.length; i++) {
-        const isLow = v[i][1] <= yMid;
+        const isLow = coords[i] <= cMid;
         if (isLow !== lastWasLow) alt++;
         lastWasLow = isLow;
     }
@@ -153,38 +169,44 @@ function fanFlatFace(v) {
 
 const tris = [];
 
+function faceNormal(v) {
+    if (v.length < 3) return [0, 0, 1];
+    const e1 = [v[1][0]-v[0][0], v[1][1]-v[0][1], v[1][2]-v[0][2]];
+    for (let i = 2; i < v.length; i++) {
+        const e2 = [v[i][0]-v[0][0], v[i][1]-v[0][1], v[i][2]-v[0][2]];
+        const n = [e1[1]*e2[2]-e1[2]*e2[1], e1[2]*e2[0]-e1[0]*e2[2], e1[0]*e2[1]-e1[1]*e2[0]];
+        const nl = Math.sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+        if (nl > 0.01) return [n[0]/nl, n[1]/nl, n[2]/nl];
+    }
+    return [0, 0, 1];
+}
+
 for (let fi = 0; fi < faces.length; fi++) {
     const f = faces[fi];
     const v = f.verts;
     if (v.length < 3) continue;
 
-    const yVals = v.map(p => p[1]);
-    const yMin = Math.min(...yVals);
-    const yMax = Math.max(...yVals);
-    const yRange = yMax - yMin;
+    const n = faceNormal(v);
+    const absN = [Math.abs(n[0]), Math.abs(n[1]), Math.abs(n[2])];
 
-    // Detect flat face: Y constant, or X constant, or Z constant
-    let isFlat = false;
-    if (yRange < 0.01) {
-        isFlat = true;
-    } else {
-        const xVals = v.map(p => p[0]);
-        const xRange = Math.max(...xVals) - Math.min(...xVals);
-        if (xRange < 0.01) isFlat = true;
-        const zVals = v.map(p => p[2]);
-        const zRange = Math.max(...zVals) - Math.min(...zVals);
-        if (zRange < 0.01) isFlat = true;
-    }
+    const xVals = v.map(p => p[0]);
+    const yVals = v.map(p => p[1]);
+    const zVals = v.map(p => p[2]);
+    const xRange = Math.max(...xVals) - Math.min(...xVals);
+    const yRange = Math.max(...yVals) - Math.min(...yVals);
+    const zRange = Math.max(...zVals) - Math.min(...zVals);
+
+    const isFlat = xRange < 0.01 || yRange < 0.01 || zRange < 0.01;
 
     // Simple quad (4V, not alternating)
-    if (v.length === 4 && !isCleanStrip(v, yMin, yMax)) {
+    if (v.length === 4 && !isCleanStrip(v, n)) {
         tris.push([addVert(v[0]), addVert(v[1]), addVert(v[2])]);
         tris.push([addVert(v[0]), addVert(v[2]), addVert(v[3])]);
         continue;
     }
 
     // Clean strip surface (standoffs, cones, transitions)
-    if (!isFlat && yRange > 0.01 && isCleanStrip(v, yMin, yMax)) {
+    if (!isFlat && isCleanStrip(v, n)) {
         for (let i = 0; i < v.length - 2; i++) {
             tris.push([addVert(v[i]), addVert(v[i+1]), addVert(v[i+2])]);
         }
@@ -223,21 +245,3 @@ fs.writeFileSync(objOut, obj);
 
 console.log(`Wrote ${path.basename(stlOut)} (${tris.length} triangles, ${allVerts.length} vertices)`);
 console.log(`Wrote ${path.basename(objOut)}`);
-console.log(`Surface area: ${ourArea.toFixed(1)} mm²`);
-
-const origPath = filePath.replace(/\.sldprt$/i, ' ORIGINAL.STL');
-if (fs.existsSync(origPath)) {
-    const origBuf = new Uint8Array(fs.readFileSync(origPath));
-    const origDv = new DataView(origBuf.buffer, origBuf.byteOffset, origBuf.byteLength);
-    const origTriCount = origDv.getUint32(80, true);
-    let origArea = 0;
-    for (let i = 0; i < origTriCount; i++) {
-        const base = 84 + i * 50 + 12;
-        const p0 = [origDv.getFloat32(base, true), origDv.getFloat32(base+4, true), origDv.getFloat32(base+8, true)];
-        const p1 = [origDv.getFloat32(base+12, true), origDv.getFloat32(base+16, true), origDv.getFloat32(base+20, true)];
-        const p2 = [origDv.getFloat32(base+24, true), origDv.getFloat32(base+28, true), origDv.getFloat32(base+32, true)];
-        origArea += triArea(p0, p1, p2);
-    }
-    console.log(`Original: ${origTriCount} tris, area=${origArea.toFixed(1)} mm²`);
-    console.log(`Area ratio: ${(ourArea/origArea*100).toFixed(1)}%`);
-}

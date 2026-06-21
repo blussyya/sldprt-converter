@@ -1,5 +1,5 @@
 node_modules/
-*.stl
-*.obj
-*.step
-*.STEP
+test/fixtures/
+test/ptc-displaylists.bin
+*.log
+.DS_Store

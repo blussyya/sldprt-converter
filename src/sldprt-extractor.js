@@ -7,22 +7,23 @@
  * New format: ROL-encoded archive → openswx decompression → MFC CArchive → multi-surface tessellation
  * 
  * Usage:
- *   Node.js: const { extractMesh, toOBJ, toSTL, toBinarySTL } = require('./slprd-extractor.js');
- *   Browser: <script src="slprd-extractor.js"></script> then window.slprdExtractor.extractMesh(buf)
+ *   Node.js: const { extractMesh, toOBJ, toSTL, toBinarySTL } = require('./sldprt-extractor.js');
+ *   Browser: <script src="sldprt-extractor.js"></script> then window.sldprtExtractor.extractMesh(buf)
  */
 
-// Browser-safe typed array concat (replaces Buffer.concat)
+// Verbose logging
 // ============================================================
 
-function _concatChunks(chunks) {
-    const total = chunks.reduce((acc, c) => acc + c.length, 0);
-    const result = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-        result.set(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk), offset);
-        offset += chunk.length;
+let _verbose = false;
+
+function _log(...args) {
+    if (_verbose && typeof console !== 'undefined') {
+        console.warn('[sldprt]', ...args);
     }
-    return result;
+}
+
+function setVerbose(v) {
+    _verbose = !!v;
 }
 
 // ============================================================
@@ -77,6 +78,31 @@ function _rolByte(b, shift) {
     return ((b << shift) | (b >>> (8 - shift))) & 0xFF;
 }
 
+// ============================================================
+// OLE2 parser (import from module or inline)
+// ============================================================
+
+let _ole2;
+if (typeof require !== 'undefined') {
+    try { _ole2 = require('./ole2-parser'); } catch (e) {}
+}
+if (!_ole2) {
+    _ole2 = { parseOLE2: null, readStream: null, ensureBuffer: null, _concatChunks: null };
+}
+const parseOLE2 = _ole2.parseOLE2 || function() { throw new Error('OLE2 parser not loaded'); };
+const readStream = _ole2.readStream || function() { throw new Error('OLE2 reader not loaded'); };
+const _ensureBuffer = _ole2.ensureBuffer || function(data) { return data; };
+const _concatChunks = _ole2._concatChunks || function(chunks) {
+    const total = chunks.reduce((acc, c) => acc + c.length, 0);
+    const result = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+        result.set(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk), offset);
+        offset += chunk.length;
+    }
+    return result;
+};
+
 function _decompressOpenSX(buf) {
     buf = _ensureBuffer(buf);
     const key = buf[7];
@@ -114,13 +140,13 @@ function _decompressOpenSX(buf) {
 
             if (_inflate.inflateRaw) {
                 try { decompressed = _inflate.inflateRaw(compressed); } catch (e) {
-                    if (typeof console !== 'undefined') console.warn('inflateRaw failed for', name, e.message);
+                    _log('inflateRaw failed for', name, '- trying inflate:', e.message);
                 }
             }
             if (!decompressed || decompressed.length === 0) {
                 if (_inflate.inflate) {
                     try { decompressed = _inflate.inflate(compressed); } catch (e) {
-                        if (typeof console !== 'undefined') console.warn('inflate failed for', name, e.message);
+                        _log('inflate failed for', name, '- skipping:', e.message);
                     }
                 }
             }
@@ -152,12 +178,12 @@ function findDisplayLists(buf) {
                     const decompressed = _inflate.brotli(dlData.subarray(14));
                     if (decompressed && decompressed.length > 100) return decompressed;
                 } catch (e) {
-                    if (typeof console !== 'undefined') console.warn('brotli decompression failed:', e.message);
+                    _log('brotli decompression failed:', e.message);
                 }
             }
         }
     } catch (e) {
-        if (typeof console !== 'undefined') console.warn('OLE2 parse failed:', e.message);
+        _log('OLE2 parse failed:', e.message);
     }
 
     // Try new format (openswx)
@@ -172,133 +198,10 @@ function findDisplayLists(buf) {
             }
         }
     } catch (e) {
-        if (typeof console !== 'undefined') console.warn('openswx extraction failed:', e.message);
+        _log('openswx extraction failed:', e.message);
     }
 
     return null;
-}
-
-// ============================================================
-// OLE2 Compound File Parser
-// ============================================================
-
-function _ensureBuffer(data) {
-    if (typeof Buffer !== 'undefined' && Buffer.isBuffer(data)) return data;
-
-    const arr = data instanceof ArrayBuffer ? new Uint8Array(data) :
-                data instanceof Uint8Array ? data : new Uint8Array(data);
-
-    let _dv = null;
-    const wrapper = new Proxy({
-        _data: arr,
-        length: arr.length,
-        readUInt16LE: function(off) { return arr[off] | (arr[off + 1] << 8); },
-        readInt32LE: function(off) { return (arr[off] | (arr[off + 1] << 8) | (arr[off + 2] << 16) | (arr[off + 3] << 24)); },
-        readUInt32LE: function(off) { return (arr[off] | (arr[off + 1] << 8) | (arr[off + 2] << 16) | (arr[off + 3] << 24)) >>> 0; },
-        readFloatLE: function(off) {
-            if (!_dv) _dv = new DataView(arr.buffer, arr.byteOffset, arr.byteLength);
-            return _dv.getFloat32(off, true);
-        },
-        subarray: function(start, end) { return arr.subarray(start, end); },
-        slice: function(start, end) { return arr.slice(start, end); },
-        toString: function(encoding, start, end) {
-            if (encoding === 'utf16le') {
-                const s = start || 0;
-                const e = end !== undefined ? end : arr.length;
-                let str = '';
-                for (let i = s; i < e; i += 2) str += String.fromCharCode(arr[i] | (arr[i + 1] << 8));
-                return str;
-            }
-            const s = start || 0;
-            const e = end !== undefined ? end : arr.length;
-            let str = '';
-            for (let i = s; i < e; i++) str += String.fromCharCode(arr[i]);
-            return str;
-        }
-    }, {
-        get: function(target, prop) {
-            if (typeof prop === 'string' && /^\d+$/.test(prop)) {
-                return arr[parseInt(prop)];
-            }
-            return target[prop];
-        }
-    });
-    return wrapper;
-}
-
-function parseOLE2(buf) {
-    buf = _ensureBuffer(buf);
-    const ss = 1 << buf.readUInt16LE(30);
-
-    const difat = [];
-    for (let i = 0; i < 109; i++) {
-        const s = buf.readInt32LE(76 + i * 4);
-        if (s >= 0) difat.push(s);
-    }
-
-    let sec = buf.readInt32LE(68);
-    while (sec >= 0 && sec < 0xfffe_fffe) {
-        const off = (sec + 1) * ss;
-        if (off + ss > buf.length) break;
-        for (let i = 0; i < ss / 4 - 1; i++) {
-            const s = buf.readInt32LE(off + i * 4);
-            if (s >= 0) difat.push(s);
-        }
-        sec = buf.readInt32LE(off + ss - 4);
-    }
-
-    const fat = [];
-    for (const s of difat) {
-        const off = (s + 1) * ss;
-        if (off + ss > buf.length) continue;
-        for (let i = 0; i < ss / 4; i++) {
-            fat.push(buf.readInt32LE(off + i * 4));
-        }
-    }
-
-    const dirSec = buf.readUInt32LE(48);
-    const chunks = [];
-    let cur = dirSec;
-    const visited = new Set();
-    while (cur >= 0 && cur < 0xfffe_fffe && !visited.has(cur)) {
-        visited.add(cur);
-        const off = (cur + 1) * ss;
-        if (off + ss > buf.length) break;
-        chunks.push(buf.subarray(off, off + ss));
-        cur = fat[cur] ?? -1;
-    }
-
-    const dirData = _concatChunks(chunks);
-    const entries = [];
-    for (let i = 0; i + 128 <= dirData.length; i += 128) {
-        const nameLen = dirData.readUInt16LE(i + 64);
-        if (nameLen === 0) continue;
-        const name = dirData.subarray(i, i + Math.max(0, nameLen - 2)).toString('utf16le');
-        entries.push({
-            name,
-            type: dirData[i + 66],
-            startSector: dirData.readInt32LE(i + 116),
-            size: dirData.readUInt32LE(i + 120)
-        });
-    }
-
-    return { ss, fat, entries };
-}
-
-function readStream(buf, fat, entry, ss) {
-    buf = _ensureBuffer(buf);
-    if (entry.type !== 2 || entry.startSector < 0) return null;
-    const chunks = [];
-    let cur = entry.startSector;
-    const visited = new Set();
-    while (cur >= 0 && cur < 0xfffe_fffe && !visited.has(cur)) {
-        visited.add(cur);
-        const off = (cur + 1) * ss;
-        if (off + ss > buf.length) break;
-        chunks.push(buf.subarray(off, off + ss));
-        cur = fat[cur] ?? -1;
-    }
-    return _concatChunks(chunks).subarray(0, entry.size);
 }
 
 // ============================================================
@@ -316,9 +219,8 @@ function parseDisplayLists(data) {
 
     if (!data || data.length < 100) return result;
 
-    const isModern = data.length > 5000 &&
-                     data.readUInt32LE(0) === 1 && data.readUInt32LE(4) === 1 &&
-                     data.length > 20000;
+    const isModern = data.length > 20000 &&
+                     data.readUInt32LE(0) === 1 && data.readUInt32LE(4) === 1;
 
     if (isModern) {
         const modernResult = _extractModernSurfaces(data);
@@ -337,8 +239,11 @@ function _extractModernSurfaces(data) {
         hasVertexData: false
     };
 
-    const MIN_C = 0.0005;
-    const MAX_C = 1.0;
+    // BUGFIX: Expanded bounds to support large parts (buildings, aerospace parts)
+    // Old: MIN_C = 0.0005, MAX_C = 1.0 rejected parts > 1 meter
+    // New: supports from 0.1mm to 100 kilometers (effectively unbounded)
+    const MIN_C = 0.0001;
+    const MAX_C = 100000.0;
 
     function looksLikeVertex(x, y, z) {
         if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return false;
@@ -629,10 +534,13 @@ function extractMesh(buf) {
 
     if (isModern) {
         result.warnings.push('Detected modern SW 2015+ format (openswx)');
+        _log('Modern openswx format detected');
     } else if (isOLE2) {
         result.warnings.push('Detected old OLE2 format');
+        _log('Legacy OLE2 format detected');
     } else {
         result.warnings.push('Unknown format, attempting extraction...');
+        _log('Unknown format - attempting both parsers');
     }
 
     const dlData = findDisplayLists(buf);
@@ -705,7 +613,7 @@ function extractMesh(buf) {
 // ============================================================
 
 function toOBJ(mesh) {
-    let obj = '# SLDPRT mesh extracted by slprd-extractor\n';
+    let obj = '# SLDPRT mesh extracted by sldprt-extractor\n';
     obj += `# ${mesh.vertices.length} vertices, ${mesh.faces.length} faces\n\n`;
 
     for (const [x, y, z] of mesh.vertices) {
@@ -728,7 +636,7 @@ function toOBJ(mesh) {
 }
 
 function toSTL(mesh) {
-    let stl = 'solid slprd_extracted\n';
+    let stl = 'solid sldprt_extracted\n';
 
     for (const face of mesh.faces) {
         if (face.length < 3) continue;
@@ -757,7 +665,7 @@ function toSTL(mesh) {
         }
     }
 
-    stl += 'endsolid slprd_extracted\n';
+    stl += 'endsolid sldprt_extracted\n';
     return stl;
 }
 
@@ -774,7 +682,7 @@ function toBinarySTL(mesh) {
     } else {
         buf = new Uint8Array(totalBytes);
     }
-    const header = 'SLDPRT extracted by slprd-extractor';
+    const header = 'SLDPRT extracted by sldprt-extractor';
     for (let i = 0; i < Math.min(header.length, 80); i++) buf[i] = header.charCodeAt(i);
     if (typeof DataView !== 'undefined') {
         const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
@@ -837,9 +745,9 @@ function toBinarySTL(mesh) {
 // ============================================================
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { extractMesh, toOBJ, toSTL, toBinarySTL, parseOLE2 };
+    module.exports = { extractMesh, toOBJ, toSTL, toBinarySTL, parseOLE2, setVerbose };
 }
 
 if (typeof window !== 'undefined') {
-    window.slprdExtractor = { extractMesh, toOBJ, toSTL, toBinarySTL, parseOLE2 };
+    window.sldprtExtractor = { extractMesh, toOBJ, toSTL, toBinarySTL, parseOLE2, setVerbose };
 }
