@@ -17,10 +17,10 @@ npm install sldprt-converter
 npx sldprt-convert input.sldprt
 
 # Convert to STL (binary format, smaller file)
-npx sldprt-convert input.sldprt --format stl
+npx sldprt-convert input.sldprt --format binary-stl
 
 # Convert to ASCII STL
-npx sldprt-convert input.sldprt --format stl --ascii
+npx sldprt-convert input.sldprt --format stl
 
 # Specify output file
 npx sldprt-convert input.sldprt --output result.obj
@@ -78,23 +78,20 @@ This tool reverse-engineers the SLDPRT binary format to extract mesh geometry di
 
 ## Current Limitations
 
-- Extracted geometry represents NURBS control points, not evaluated surfaces
-- B-spline interpolation is linear (surfaces may deviate slightly from true curves)
+- Surface detection is heuristic (`tryReadSurface` at fixed offsets) — may pick up false positives
+- Some files use compressed `DisplayLists__Zip` format not yet supported (openswx decoder only handles uncompressed)
 - Holes/cutouts (face inner boundaries) not yet supported
 - Assembly files (.sldasm) not supported; convert individual parts
 - SolidWorks 2010 and earlier (legacy OLE2-only format) may have limited support
 
 ## Accuracy Notes
 
-The converter produces valid, manifold 3D meshes suitable for:
-- 3D printing (STL import)
-- CAD visualization
-- Mesh analysis and manipulation
+The converter extracts mesh data from SolidWorks' internal DisplayLists stream (tessellated geometry).
 
 **Geometric accuracy depends on:**
-- Original SolidWorks part complexity
-- Surface curvature (curved faces deviate slightly due to linear control-point interpolation)
-- File format version
+- Surface detection finding correct byte offsets
+- Source file compression format
+- Heuristic face reconstruction from raw vertex data
 
 For production use where exact geometry is critical, export directly from SolidWorks instead.
 
@@ -142,24 +139,25 @@ Convert mesh to binary STL format (compact, suitable for 3D printing).
 
 See [dev/README.md](dev/README.md) for information about the reverse-engineering scripts and format analysis tools.
 
-## Conversion Test Results (v0.2.1)
+## Conversion Test Results (v0.2.2)
 
-Tested against 10 SolidWorks SLDPRT files covering various geometries:
+Tested against 10 SolidWorks SLDPRT files covering various geometries.
+The iterative MAD outlier filter removes garbage vertices from false-positive surfaces while preserving valid geometry.
 
-| File | Vertices | Faces | Triangles | Status |
-|------|----------|-------|-----------|--------|
-| Dekor | 12 | 2 | 8 | ✅ |
-| distributor main boss rev a | 831 | 47 | 738 | ✅ |
-| Helical Bevel Gear | 2,897 | 299 | 2,406 | ✅ |
-| Pocket Wheel | 8,531 | 780 | 6,878 | ✅ |
-| PTC GE8080-8 | 952 | 174 | 605 | ✅ |
-| USB hub case BOTTOM | 244 | 21 | 221 | ✅ |
-| USB hub case TOP | 1,813 | 96 | 1,665 | ✅ |
-| chainwheel | — | — | — | ❌ (unsupported compression) |
-| plate4 | — | — | — | ❌ (unsupported compression) |
-| SW2000-s01 | — | — | — | ❌ (unsupported compression) |
+| File | Vertices | Faces | Triangles | Dimensions (mm) | Status |
+|------|----------|-------|-----------|-----------------|--------|
+| Dekor | 9 | 2 | 5 | — | ⚠️ (incomplete mesh) |
+| distributor main boss rev a | 313 | 40 | 231 | 135 × 124 × 34 | ✅ |
+| Helical Bevel Gear | 2,235 | 300 | 1,588 | — | ⚠️ (dimension inflation) |
+| Pocket Wheel | 5,784 | 679 | 3,956 | — | ⚠️ (dimension inflation) |
+| PTC GE8080-8 | 577 | 104 | 308 | — | ⚠️ (dimension inflation) |
+| USB hub case BOTTOM | 165 | 21 | 123 | **63 × 67 × 27** ✅ | ✅ (matches STEP ref) |
+| USB hub case TOP | 483 | 69 | 328 | 144 × 67 × 11 | ⚠️ (partial inflation) |
+| chainwheel | — | — | — | — | ❌ (unsupported compression) |
+| plate4 | — | — | — | — | ❌ (unsupported compression) |
+| SW2000-s01 | — | — | — | — | ❌ (unsupported compression) |
 
-**Results:** 7/10 files converted successfully (70% success rate). Failed files use a compression format not yet supported by the openswx decoder.
+**Results:** 7/10 files produce mesh output (70% parse rate). Failed files use compressed `DisplayLists__Zip` format not yet supported. The USB hub case BOTTOM now matches the reference STEP file dimensions exactly (63×67×27mm). Other files suffer from false-positive surface detection inflating bounding boxes.
 
 ## License
 

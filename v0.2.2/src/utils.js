@@ -85,7 +85,13 @@ function project3dTo2d(pts3d) {
 
 function triangulate(outer3d, holes3d) {
     if (holes3d && holes3d.length > 0) {
-        const outer2d = project3dTo2d(outer3d);
+        // Create projection basis from the first 3 outer points
+        const n = vnorm(crs(sub(outer3d[1],outer3d[0]), sub(outer3d[2],outer3d[0])));
+        const u = Math.abs(n[0]) < Math.abs(n[1]) ? vnorm(crs(n, [1,0,0])) : vnorm(crs(n, [0,1,0]));
+        const v = crs(n, u);
+        const project = p => [dot(p, u), dot(p, v)];
+
+        const outer2d = outer3d.map(project);
         const tris = earClip(outer2d);
         const result = [];
         for (const t of tris) {
@@ -93,10 +99,10 @@ function triangulate(outer3d, holes3d) {
             const a = outer3d[t[0]], b = outer3d[t[1]], c = outer3d[t[2]];
             if (!a || !b || !c) continue;
             const centroid = [(a[0]+b[0]+c[0])/3, (a[1]+b[1]+c[1])/3, (a[2]+b[2]+c[2])/3];
-            const tcP2 = [dot(centroid, u), dot(centroid, v)];
+            const tcP2 = project(centroid);
             let insideHole = false;
             for (const hole3d of holes3d) {
-                const hole2d = project3dTo2d(hole3d);
+                const hole2d = hole3d.map(project);
                 if (ptInPoly(tcP2[0], tcP2[1], hole2d)) { insideHole = true; break; }
             }
             if (!insideHole) result.push([a, b, c]);

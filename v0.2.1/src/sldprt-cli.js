@@ -130,10 +130,15 @@ function processFile(filePath, opts) {
     const ext = opts.format === 'binary-stl' ? '.stl' : '.' + opts.format.replace('binary-', '');
 
     let outPath;
-    if (opts.output && opts.files.length === 1) {
-        outPath = opts.output;
-    } else if (opts.output) {
-        outPath = path.join(opts.output, baseName + ext);
+    if (opts.output) {
+        const outStat = fs.existsSync(opts.output) ? fs.statSync(opts.output) : null;
+        if (outStat && outStat.isDirectory()) {
+            outPath = path.join(opts.output, baseName + ext);
+        } else if (opts.files.length === 1) {
+            outPath = opts.output;
+        } else {
+            outPath = path.join(opts.output, baseName + ext);
+        }
     } else {
         outPath = path.join(path.dirname(absPath), baseName + ext);
     }

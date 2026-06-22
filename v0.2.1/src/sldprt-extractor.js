@@ -239,121 +239,51 @@ function _extractModernSurfaces(data) {
         hasVertexData: false
     };
 
-    // BUGFIX: Expanded bounds to support large parts (buildings, aerospace parts)
-    // Old: MIN_C = 0.0005, MAX_C = 1.0 rejected parts > 1 meter
-    // New: supports from 0.1mm to 100 kilometers (effectively unbounded)
-    const MIN_C = 0.0001;
     const MAX_C = 100000.0;
+    const MARKER = new Uint8Array([0x0c, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00]);
+    const markerPositions = _findAll(data, MARKER);
 
-    function looksLikeVertex(x, y, z) {
-        if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return false;
-        const ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
-        if (ax > MAX_C || ay > MAX_C || az > MAX_C) return false;
-        return (ax >= MIN_C ? 1 : 0) + (ay >= MIN_C ? 1 : 0) + (az >= MIN_C ? 1 : 0) >= 2;
+    const allVerts = [];
+    const allFaces = [];
+
+    for (const mp of markerPositions) {
+        if (mp < 4) continue;
+        const edgeCount = data.readUInt32LE(mp - 4);
+        if (edgeCount < 1 || edgeCount > 500) continue;
+        const faceType = data.readUInt32LE(mp + 8);
+        if (faceType !== 2) continue;
+        const vertexCount = data.readUInt32LE(mp + 12);
+        if (vertexCount < 3 || vertexCount > 5000) continue;
+
+        const vertStart = mp + 16;
+        if (vertStart + vertexCount * 12 > data.length) continue;
+
+        // Validate vertices — reject if any coordinate is clearly garbage
+        let valid = true;
+        const verts = [];
+        for (let i = 0; i < vertexCount; i++) {
+            const off = vertStart + i * 12;
+            const x = data.readFloatLE(off);
+            const y = data.readFloatLE(off + 4);
+            const z = data.readFloatLE(off + 8);
+            if (!isFinite(x) || !isFinite(y) || !isFinite(z)) { valid = false; break; }
+            if (Math.abs(x) > MAX_C || Math.abs(y) > MAX_C || Math.abs(z) > MAX_C) { valid = false; break; }
+            verts.push([x, y, z]);
+        }
+        if (!valid) continue;
+
+        const faceVerts = [];
+        for (let i = 0; i < vertexCount; i++) {
+            faceVerts.push(allVerts.length + i);
+        }
+        allFaces.push(faceVerts);
+        allVerts.push(...verts);
     }
 
-    function tryReadSurface(pos) {
-        if (pos + 8 > data.length) return null;
+    if (allVerts.length === 0) return result;
 
-        const faceCount = data.readUInt32LE(pos);
-        if (faceCount < 1 || faceCount > 100) return null;
-
-        for (let tryOff = 4; tryOff < 200; tryOff += 4) {
-            const countStart = pos + tryOff;
-            if (countStart + faceCount * 4 > data.length) break;
-
-            const counts = [];
-            let ok = true;
-            for (let i = 0; i < faceCount; i++) {
-                const v = data.readUInt32LE(countStart + i * 4);
-                if (v < 2 || v > 500) { ok = false; break; }
-                counts.push(v);
-            }
-            if (!ok) continue;
-
-            const totalVerts = counts.reduce((a, b) => a + b, 0);
-            if (totalVerts < 3 || totalVerts > 5000) continue;
-
-            const afterCounts = countStart + faceCount * 4;
-            let vertStart = -1;
-
-            for (let vp = afterCounts; vp < afterCounts + 500 && vp + 12 <= data.length; vp += 4) {
-                const x = data.readFloatLE(vp);
-                const y = data.readFloatLE(vp + 4);
-                const z = data.readFloatLE(vp + 8);
-                if (looksLikeVertex(x, y, z)) {
-                    if (vp + 24 <= data.length) {
-                        const x2 = data.readFloatLE(vp + 12);
-                        const y2 = data.readFloatLE(vp + 16);
-                        const z2 = data.readFloatLE(vp + 20);
-                        if (looksLikeVertex(x2, y2, z2)) {
-                            vertStart = vp;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (vertStart < 0) continue;
-
-            const verts = [];
-            let p = vertStart;
-            while (p + 12 <= data.length && verts.length < totalVerts) {
-                const x = data.readFloatLE(p);
-                const y = data.readFloatLE(p + 4);
-                const z = data.readFloatLE(p + 8);
-                if (!isFinite(x) || !isFinite(y) || !isFinite(z)) break;
-                if (Math.abs(x) > MAX_C || Math.abs(y) > MAX_C || Math.abs(z) > MAX_C) break;
-                if (Math.abs(x) < MIN_C && Math.abs(y) < MIN_C && Math.abs(z) < MIN_C) break;
-                verts.push([x, y, z]);
-                p += 12;
-            }
-
-            if (verts.length < Math.floor(totalVerts * 0.7)) continue;
-
-            return {
-                offset: pos,
-                vertOffset: vertStart,
-                counts,
-                totalVerts,
-                verts,
-            };
-        }
-        return null;
-    }
-
-    const surfaces = [];
-    let scanPos = 96;
-
-    while (scanPos + 20 <= data.length) {
-        const surf = tryReadSurface(scanPos);
-        if (surf) {
-            surfaces.push(surf);
-            scanPos = surf.vertOffset + surf.verts.length * 12;
-        } else {
-            scanPos += 4;
-        }
-    }
-
-    if (surfaces.length === 0) return result;
-
-    let vertexOffset = 0;
-    for (const surf of surfaces) {
-        for (const v of surf.verts) {
-            result.vertices.push(v);
-        }
-        let fi = 0;
-        for (const count of surf.counts) {
-            const faceIndices = [];
-            for (let j = 0; j < count; j++) {
-                faceIndices.push(vertexOffset + fi + j);
-            }
-            result.faces.push(faceIndices);
-            fi += count;
-        }
-        vertexOffset += surf.verts.length;
-    }
-
+    result.vertices = allVerts;
+    result.faces = allFaces;
     result.hasVertexData = true;
     return result;
 }
@@ -576,6 +506,32 @@ function extractMesh(buf) {
         const crossLen = Math.sqrt((ay * bz - az * by) ** 2 + (az * bx - ax * bz) ** 2 + (ax * by - ay * bx) ** 2);
         return crossLen > 1e-12;
     });
+
+    // Remove clearly garbage vertices (extreme outliers from false-positive face records)
+    if (result.vertices.length > 3) {
+        const goodIndices = [];
+        const oldToNew = new Map();
+        for (let i = 0; i < result.vertices.length; i++) {
+            const v = result.vertices[i];
+            const ax = Math.abs(v[0]), ay = Math.abs(v[1]), az = Math.abs(v[2]);
+            if (ax > 10000 || ay > 10000 || az > 10000) continue;
+            oldToNew.set(i, goodIndices.length);
+            goodIndices.push(v);
+        }
+        if (goodIndices.length >= 3 && goodIndices.length < result.vertices.length) {
+            result.warnings.push(`Removed ${result.vertices.length - goodIndices.length} garbage vertices`);
+            result.vertices = goodIndices;
+            const newFaces = [];
+            for (const face of result.faces) {
+                const nf = [];
+                for (const idx of face) {
+                    if (oldToNew.has(idx)) nf.push(oldToNew.get(idx));
+                }
+                if (nf.length >= 3) newFaces.push(nf);
+            }
+            result.faces = newFaces;
+        }
+    }
 
     result.warnings.push(`Extracted: ${result.vertices.length} vertices, ${result.faces.length} faces`);
 
