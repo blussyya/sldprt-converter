@@ -1,6 +1,6 @@
 {
   "name": "sldprt-converter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "commonjs",
   "description": "Convert SolidWorks SLDPRT files to STL/OBJ with STEP validation",
   "main": "src/sldprt-extractor.js",
@@ -14,7 +14,6 @@
     "src/validate.js",
     "src/step-parse.js",
     "src/ole2-parser.js",
-    "src/sldprt-reader.js",
     "src/utils.js",
     "README.md",
     "LICENSE"
@@ -22,19 +21,12 @@
   "scripts": {
     "convert": "node src/sldprt-cli.js",
     "validate": "node src/validate.js",
-    "test": "node --test test/test-extractor.js",
-    "test:generate": "node test/generate-test-fixture.js",
-    "pretest": "node test/generate-test-fixture.js"
+    "test": "node --test test/test-extractor.js"
   },
   "dependencies": {
-    "earcut": "^3.0.2",
-    "lzma": "^2.3.2",
-    "pako": "^2.1.0"
-  },
-  "directories": {
-    "test": "test"
+    "earcut": "^3.0.2"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "MIT"
 }

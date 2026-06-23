@@ -15,37 +15,8 @@
 const fs = require('fs');
 const path = require('path');
 const { extractMesh, toOBJ, toSTL, toBinarySTL, toSTEP, setVerbose, setFaceSurface } = require('./sldprt-extractor.js');
-const { parseSTEP, buildLookup, evalA2P3D, extractFaceBoundaries } = require('./step-parse.js');
-
-const sub = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
-const scl = (v, s) => [v[0]*s, v[1]*s, v[2]*s];
-const dot = (a, b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-const vlen = v => Math.sqrt(v[0]**2+v[1]**2+v[2]**2);
-
-function distToSurface(p, surf, lookup) {
-    if (!surf || !surf.a2p3d) return null;
-    const ap = evalA2P3D(surf.a2p3d, lookup);
-    if (!ap) return null;
-
-    switch (surf.type) {
-        case 'PLANE':
-            return Math.abs(dot(sub(p, ap.center), ap.normal));
-        case 'CYL': {
-            const v = sub(p, ap.center);
-            const radial = sub(v, scl(ap.normal, dot(v, ap.normal)));
-            return Math.abs(vlen(radial) - surf.radius);
-        }
-        case 'CON': {
-            const v = sub(p, ap.center);
-            const t = dot(v, ap.normal);
-            const expectedR = surf.radius + t * Math.tan(surf.halfAngle);
-            const radial = sub(v, scl(ap.normal, t));
-            return Math.abs(vlen(radial) - expectedR);
-        }
-        default:
-            return null;
-    }
-}
+const { parseSTEP, buildLookup, evalA2P3D, distToSurface, extractFaceBoundaries } = require('./step-parse.js');
+const { triArea } = require('./utils.js');
 
 function findMatchingSTEPFace(slVerts, stepFaces, lookup, tolerance) {
     let bestFace = null;
@@ -97,17 +68,10 @@ function parseArgs(args) {
     return opts;
 }
 
-function triArea(a, b, c) {
-    const e1 = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
-    const e2 = [c[0]-a[0], c[1]-a[1], c[2]-a[2]];
-    const n = [e1[1]*e2[2]-e1[2]*e2[1], e1[2]*e2[0]-e1[0]*e2[2], e1[0]*e2[1]-e1[1]*e2[0]];
-    return Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]) / 2;
-}
-
 function run() {
     const args = process.argv.slice(2);
     if (args.length === 0) {
-        console.log(`SLDPRT Validate & Convert (v0.3.0)
+        console.log(`SLDPRT Validate & Convert (v0.3.1)
 
 Usage:
   node validate.js <input.sldprt> [input.STEP] [options]

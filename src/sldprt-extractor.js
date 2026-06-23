@@ -49,27 +49,12 @@ if (!_findAll) {
 }
 
 const _inflate = (function() {
-    if (typeof require !== 'undefined') {
-        try {
-            const zlib = require('zlib');
-            return {
-                inflateRaw: (buf) => zlib.inflateRawSync(Buffer.from(buf)),
-                inflate: (buf) => zlib.inflateSync(Buffer.from(buf)),
-                brotli: (buf) => zlib.brotliDecompressSync(Buffer.from(buf))
-            };
-        } catch (e) {
-            if (typeof console !== 'undefined') console.warn('zlib load failed:', e.message);
-        }
-    }
-    if (typeof pako !== 'undefined') {
-        return {
-            inflateRaw: (buf) => pako.inflateRaw(new Uint8Array(buf)),
-            inflate: (buf) => pako.inflate(new Uint8Array(buf)),
-            brotli: null
-        };
-    }
-    if (typeof console !== 'undefined') console.warn('No inflate library available (zlib or pako)');
-    return { inflateRaw: null, inflate: null, brotli: null };
+    const zlib = require('zlib');
+    return {
+        inflateRaw: (buf) => zlib.inflateRawSync(Buffer.from(buf)),
+        inflate: (buf) => zlib.inflateSync(Buffer.from(buf)),
+        brotli: (buf) => zlib.brotliDecompressSync(Buffer.from(buf))
+    };
 })();
 
 function _rolByte(b, shift) {

@@ -206,6 +206,7 @@ sldprt-converter/
 ├── README.md
 ├── package.json
 ├── package-lock.json
+├── LICENSE
 ├── .gitignore
 ├── src/
 │   ├── validate.js          # Main CLI: extract + validate + export
@@ -213,19 +214,16 @@ sldprt-converter/
 │   ├── sldprt-extractor.js  # Core library: SLDPRT parsing + mesh extraction
 │   ├── step-parse.js        # STEP AP214 parser + surface evaluator
 │   ├── ole2-parser.js       # OLE2 compound document parser
-│   ├── sldprt-reader.js     # Node-only SLDPRT stream reader
 │   └── utils.js             # Shared math utilities (triangulation, etc.)
 ├── test/                    # Test fixtures and test suite
-└── node_modules/            # Dependencies (pako, earcut, lzma)
+└── node_modules/            # Dependencies (earcut)
 ```
 
 ## Dependencies
 
 | Package | Purpose |
 |---------|---------|
-| [pako](https://www.npmjs.com/package/pako) | zlib decompression for compressed SLDPRT streams |
 | [earcut](https://www.npmjs.com/package/earcut) | Polygon triangulation with hole support |
-| [lzma](https://www.npmjs.com/package/lzma) | LZMA decompression for legacy SLDPRT streams |
 
 ## Known Limitations
 
