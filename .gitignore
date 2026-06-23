@@ -1,22 +1,11 @@
-# Binary test files
-test files original/
-test files original.zip
-test files converted/
-
-# ZIP archives
-*.zip
-
-# Node modules
 node_modules/
-
-# Temp files
-tmp_in.bin
-tmp_out.bin
-
-# OS files
-Thumbs.db
-Desktop.ini
-
-# Guide files
-*.md
-!README.md
+test/fixtures/
+test/ptc-displaylists.bin
+*.log
+.DS_Store
+tmp_*.bin
+src/analyze-ref.js
+src/diag-*
+src/diagnose-*
+src/test-decompress*.js
+src/test-streams.js
