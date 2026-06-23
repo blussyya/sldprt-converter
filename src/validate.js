@@ -71,15 +71,14 @@ function findMatchingSTEPFace(slVerts, stepFaces, lookup, tolerance) {
     return { face: bestFace, score: bestScore };
 }
 
-const OUTPUT_DIR = path.join('C:\\Users\\basha\\Desktop\\soldiworks research\\test files converted');
-
-function uniqueFilename(base, ext) {
-    if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-    let candidate = path.join(OUTPUT_DIR, base + ext);
+function uniqueFilename(base, ext, outDir) {
+    if (!outDir) outDir = process.cwd();
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+    let candidate = path.join(outDir, base + ext);
     if (!fs.existsSync(candidate)) return candidate;
     let i = 2;
-    while (fs.existsSync(path.join(OUTPUT_DIR, `${base}_v${i}${ext}`))) i++;
-    return path.join(OUTPUT_DIR, `${base}_v${i}${ext}`);
+    while (fs.existsSync(path.join(outDir, `${base}_v${i}${ext}`))) i++;
+    return path.join(outDir, `${base}_v${i}${ext}`);
 }
 
 function parseArgs(args) {
@@ -318,7 +317,7 @@ Examples:
     if (opts.output) {
         outPath = path.resolve(opts.output);
     } else {
-        outPath = uniqueFilename(baseName + '_extracted', ext);
+        outPath = uniqueFilename(baseName + '_extracted', ext, path.dirname(sldprtPath));
     }
 
     console.log(`\n=== Export ===\n`);

@@ -134,7 +134,7 @@ node src/sldprt-cli.js *.sldprt -f binary-stl
 
 ## Output Files
 
-Exported files go to `C:\Users\basha\Desktop\soldiworks research\test files converted\` by default (when run from the original project path), or alongside the input file. Output is auto-versioned to prevent overwriting:
+Exported files are placed alongside the input file by default. Output is auto-versioned to prevent overwriting:
 
 ```
 USB hub case BOTTOM_extracted_v1.stl
