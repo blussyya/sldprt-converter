@@ -162,6 +162,23 @@ USB hub case BOTTOM_extracted_v3.stl
 | OBJ (`.obj`) | Wavefront OBJ, widely supported by 3D viewers and renderers |
 | STEP (`.step`) | AP214 with deduplicated CARTESIAN_POINTs (~200KB) |
 
+## Research Project
+
+This repository is also a binary-format reverse-engineering research project. The goal is to recover the serialization grammar of the SLDPRT format well enough to build a read-only parser — syntax before semantics, never guessing meanings.
+
+The project-wide knowledge base is maintained under `knowledge/`:
+- `KNOWN_INVARIANTS.md` — verified structural properties demonstrated across the corpus
+- `EXPERIMENT_LOG.md` — ledger of every experiment with facts, hypotheses, and confidence
+- `FAILED_HYPOTHESES.md` — hypotheses that have been disproven
+- `OPEN_QUESTIONS.md` — broad unresolved questions
+- `NEXT_QUESTIONS.md` — concrete operational research queue
+- `EVIDENCE_PRESERVATION_POLICY.md` — rules for reproducible evidence
+- `evidence/` — archived raw outputs supporting every numerical claim
+
+Branch-local research notebooks are preserved under version directories (e.g., `v0.3.5/docs/research/`).
+
+See `knowledge/RESEARCH_DASHBOARD.md` for the current research posture.
+
 ## How It Works
 
 SolidWorks SLDPRT files store pre-tessellated mesh data inside `DisplayLists` streams. The extraction pipeline:
@@ -216,6 +233,18 @@ sldprt-converter/
 │   ├── ole2-parser.js       # OLE2 compound document parser
 │   └── utils.js             # Shared math utilities (triangulation, etc.)
 ├── test/                    # Test fixtures and test suite
+├── knowledge/               # Project-wide research knowledge base
+│   ├── KNOWN_INVARIANTS.md  # Verified structural properties
+│   ├── EXPERIMENT_LOG.md    # Experiment ledger
+│   ├── FAILED_HYPOTHESES.md # Disproven hypotheses
+│   ├── RESEARCH_DASHBOARD.md# Current research posture
+│   ├── NEXT_QUESTIONS.md    # Concrete research queue
+│   ├── OPEN_QUESTIONS.md    # Broad unresolved questions
+│   ├── ASSUMPTIONS.md       # Working assumptions
+│   ├── FORMAT_TIMELINE.md   # Version and container observations
+│   ├── EVIDENCE_PRESERVATION_POLICY.md  # Rules for reproducible evidence
+│   └── evidence/            # Archived raw experiment outputs
+├── v0.3.5/                  # v0.3.5 research branch scripts and docs
 └── node_modules/            # Dependencies (earcut)
 ```
 

@@ -9,6 +9,3 @@ src/diag-*
 src/diagnose-*
 src/test-decompress*.js
 src/test-streams.js
-test files original/
-test files converted/
-temp_*/
