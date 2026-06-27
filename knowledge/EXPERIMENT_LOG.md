@@ -256,3 +256,38 @@ Source migrated from `v0.3.5/docs/research/EXPERIMENT_LOG.md`.
 **Confidence**: High for rejecting the property-table hypothesis, pending raw evidence archival.
 
 **Date last updated**: 2026-06-27
+
+---
+
+## EXP-011: Block 1 Invariant Validation (v0.4.0)
+
+**Status**: Verified Structural Invariant for I1/I2/I3; Observation for corpus statistics
+
+**Goal**: Validate three Block 1 structural invariants across the full corpus and collect corpus-wide statistics.
+
+**Method**: Parse 4 modern openswx-like files with `v0.4.0/block1_parser.js`; build per-face AST; validate I1 (`b1len = 2 × (vertexCount − sectionCount)`), I2 (`sectionBodyTokenCount = Block2[i] − 1`), I3 (`Σ Block2[i] = b1len`); collect section length distribution, ZERO run lengths, positional frequency, VALUE repetition counts.
+
+**Evidence / facts**:
+
+- I1 passes: 593/593 (100%)
+- I2 passes: 593/593 (100%)
+- I3 passes: 593/593 (100%)
+- 3429 ONE-delimited sections across the corpus
+- 53 distinct section lengths observed (odd numbers: 3, 5, 7, ..., 215)
+- Section length alone does not uniquely determine token-class sequence: only 16/53 lengths (30.2%) have a single unique class pattern
+- Most common section lengths: 3 (882/3429), 7 (825/3429), 11 (497/3429)
+- VALUE tokens repeat in 1937/3429 sections (56.5%)
+- Total VALUE tokens: 16174; distinct: 6082; repeat occurrences: 2636
+- ZERO run lengths: heavily skewed to length 1 (11020/14536 runs); runs up to 95 observed
+
+**Disproved hypotheses**: None directly; FH-011 and FH-013 remain falsified and are consistent with invariant data.
+
+**Files tested**: BOTTOM, TOP, GEAR, DEKOR
+
+**Faces/models tested**: 593 of 595 corpus faces across 4 models. BOTTOM: 39/39, TOP: 68/68, GEAR: 113/113, DEKOR: 373/375. The 2 DEKOR faces that failed v0.4.0 parser validation are under investigation.
+
+**Confidence**: High for invariants (I1/I2/I3); low for interpretation of corpus statistics.
+
+**Date last updated**: 2026-06-27
+
+**Raw evidence**: `knowledge/evidence/2026-06-27_v0.4.0-invariant-validation.md`, `knowledge/evidence/2026-06-27_v0.4.0-corpus-analysis.txt`

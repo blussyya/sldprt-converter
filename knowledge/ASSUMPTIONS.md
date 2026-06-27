@@ -40,13 +40,13 @@ These are working assumptions only. They must be moved to `FAILED_HYPOTHESES.md`
 
 **Status**: Hypothesis
 
-**Evidence**: ONE count equals Block 2 entry count for 595/595 faces. This proves count equality, not semantic correspondence.
+**Evidence**: ONE count equals Block 2 entry count for 595/595 faces (EXP-007). Additionally, INV-017 (Verified Structural Invariant) demonstrates that each section body length equals `Block2[i] − 1` across 593/593 validated faces. The structural pairing is verified; semantic correspondence remains unproven.
 
 **Files tested**: BOTTOM, TOP, GEAR, DEKOR
 
-**Faces/models tested**: 595 faces across 4 models.
+**Faces/models tested**: 595 faces across 4 models (593 validated by v0.4.0 parser; 2-face discrepancy under investigation).
 
-**Confidence**: High for count equality, medium-low for semantic correspondence.
+**Confidence**: High for structural pairing (count + length equality), medium-low for semantic correspondence.
 
 **Date last updated**: 2026-06-27
 

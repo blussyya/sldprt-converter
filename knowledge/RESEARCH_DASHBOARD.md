@@ -39,6 +39,9 @@ Branch-local notebooks remain under version directories such as `v0.3.5/docs/res
 - Block 1 starts with ONE for 595/595 tested faces.
 - Block 1 ONE count equals Block 2 entry count for 595/595 tested faces.
 - Block 1 ONE values are singleton runs.
+- Block 1 body length follows `b1len = 2 × (vertexCount − sectionCount)` (INV-016, 593/593 validated faces).
+- Every ONE-delimited section body token count equals `Block2[i] − 1` (INV-017, 593/593 validated faces).
+- Sum of Block 2 values equals Block 1 body length (INV-018, 593/593 validated faces).
 
 See `KNOWN_INVARIANTS.md` for evidence details.
 
@@ -52,6 +55,7 @@ See `KNOWN_INVARIANTS.md` for evidence details.
 - Whether Block 1 is better modeled as grammar or opcode/operand bytecode.
 - The meaning of DisplayLists `[1,1]` section-like structures.
 - The structure of metadata streams such as LWDATA and unresolved high-entropy streams such as `Config-0-Partition`.
+- Section length alone does not uniquely determine token-class sequence (only 30.2% of lengths have a single unique pattern).
 
 See `OPEN_QUESTIONS.md`.
 
@@ -61,7 +65,6 @@ See `OPEN_QUESTIONS.md`.
 
 - NQ-001: Can Block 1 be parsed by a finite-state grammar over observed section forms?
 - NQ-002: Do ONE-delimited Block 1 segment lengths correlate with Block 2 loop vertex counts?
-- NQ-002A: Does `len = 2 * loopSize - 2` hold across the full archived corpus?
 - NQ-004A: Can the property-table falsification evidence be reproduced and archived?
 
 See `NEXT_QUESTIONS.md`.
@@ -91,7 +94,7 @@ See `FAILED_HYPOTHESES.md`.
 | `test files original/Dekor.SLDPRT` | DEKOR | Modern openswx-like file, 375 parsed faces |
 | `test files original/SW2000-s01.SLDPRT` | SW2000 | Older OLE2 file, partially decoded |
 
-Modern aggregate: 595 parsed faces across 4 models.
+Modern aggregate: 595 parsed faces across 4 models. (v0.4.0 parser validates 593/595; 2-face discrepancy under investigation.)
 
 ---
 

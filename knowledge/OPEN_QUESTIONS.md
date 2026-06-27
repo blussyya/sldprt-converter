@@ -10,11 +10,11 @@ Source migrated from `v0.3.5/docs/research/OPEN_QUESTIONS.md`.
 
 **Status**: Hypothesis Space
 
-**Evidence so far**: Block 1 starts with ONE, ONE count equals Block 2 entry count, ONE values are singleton, and ZERO/LARGE alternation is common.
+**Evidence so far**: Block 1 starts with ONE, ONE count equals Block 2 entry count, ONE values are singleton, and ZERO/LARGE alternation is common. Additionally, three structural invariants have been verified (INV-016/017/018): Block 1 body length relates to vertex count and section count; each ONE-delimited section body length equals `Block2[i] − 1`; and Block 2 values sum to Block 1 body length. However, section length alone does not uniquely determine token-class sequence (only 30.2% of lengths have a single unique pattern across 3429 sections).
 
 **Files tested**: BOTTOM, TOP, GEAR, DEKOR
 
-**Faces/models tested**: 595 faces across 4 models.
+**Faces/models tested**: 593/595 faces across 4 models (2-face discrepancy under investigation).
 
 **Confidence**: High that grammar exists; low on complete grammar.
 
@@ -26,13 +26,13 @@ Source migrated from `v0.3.5/docs/research/OPEN_QUESTIONS.md`.
 
 **Status**: Open Question
 
-**Evidence so far**: Current observations include ONE-delimited sections, token classes, repeated local forms, and the measured length relation `len = 2 * loopSize - 2`. These measurements describe stable surface structure, but they do not distinguish between a declarative grammar of section forms and an imperative bytecode-like stream with opcodes and operands.
+**Evidence so far**: Current observations include ONE-delimited sections, token classes, repeated local forms, the verified length relation INV-017 (`sectionBodyTokenCount = Block2[i] − 1`), and the observation that section length alone does not uniquely determine token-class sequence. These measurements describe stable surface structure, but they do not distinguish between a declarative grammar of section forms and an imperative bytecode-like stream with opcodes and operands.
 
-**Why current evidence cannot distinguish the models**: The project has not yet shown whether values control parser state as operations, or whether they are terminals in a fixed structural grammar. No execution model, opcode table, operand arity table, or complete finite-state grammar has been verified.
+**Why current evidence cannot distinguish the models**: The project has not yet shown whether values control parser state as operations, or whether they are terminals in a fixed structural grammar. No execution model, opcode table, operand arity table, or complete finite-state grammar has been verified. The non-uniqueness of token-class patterns by section length is consistent with both models.
 
-**Files tested**: BOTTOM, TOP, GEAR, DEKOR for earlier grammar observations; today's measured corpus for the section-length relation, exact file list not yet archived.
+**Files tested**: BOTTOM, TOP, GEAR, DEKOR for earlier grammar observations; v0.4.0 corpus for INV-017 verification.
 
-**Faces/models tested**: 595 faces across 4 models for earlier grammar observations; today's exact measured count not yet archived.
+**Faces/models tested**: 593/595 faces across 4 models (2-face discrepancy under investigation).
 
 **Confidence**: High that both models remain viable; no answer assigned.
 
@@ -44,13 +44,13 @@ Source migrated from `v0.3.5/docs/research/OPEN_QUESTIONS.md`.
 
 **Status**: Hypothesis
 
-**Evidence so far**: Count of ONE values equals Block 2 loop count for 595/595 faces. This supports, but does not prove, a one-segment-per-loop interpretation.
+**Evidence so far**: Count of ONE values equals Block 2 loop count for 595/595 faces. INV-017 further shows that each section body length equals `Block2[i] − 1`, which is consistent with — but does not prove — a one-segment-per-loop interpretation.
 
 **Files tested**: BOTTOM, TOP, GEAR, DEKOR
 
 **Faces/models tested**: 595 faces across 4 models.
 
-**Confidence**: High on count correlation, medium-low on segment meaning.
+**Confidence**: High on count correlation and structural pairing (INV-017), medium-low on semantic meaning.
 
 **Date last updated**: 2026-06-27
 
@@ -76,15 +76,15 @@ Source migrated from `v0.3.5/docs/research/OPEN_QUESTIONS.md`.
 
 **Status**: Open Question
 
-**Evidence so far**: `VALUE` is currently only an observational class for any Block 1 integer other than `0` or `1`. The property-table hypothesis was falsified by today's reported random-base controls, frequency-bias analysis, and delimiter-artifact finding.
+**Evidence so far**: `VALUE` is currently only an observational class for any Block 1 integer other than `0` or `1`. The property-table hypothesis was falsified by today's reported random-base controls, frequency-bias analysis, and delimiter-artifact finding. The v0.4.0 corpus statistics show that VALUE tokens repeat in 1937/3429 sections (56.5%) and that section length alone does not uniquely determine token-class sequence. These observations constrain but do not resolve VALUE semantics.
 
 **Current conclusion**: VALUE semantics are UNKNOWN.
 
 **Promotion rule**: Future hypotheses about VALUE must include at least one discriminating experiment before being promoted beyond Hypothesis.
 
-**Files tested**: BOTTOM, TOP, GEAR, DEKOR for earlier VALUE/token observations; today's measured corpus for property-table falsification, exact file list not yet archived.
+**Files tested**: BOTTOM, TOP, GEAR, DEKOR for earlier VALUE/token observations; v0.4.0 corpus for statistics.
 
-**Faces/models tested**: 595 faces across 4 models for earlier token observations; today's exact measured count not yet archived.
+**Faces/models tested**: 593/595 faces across 4 models (2-face discrepancy under investigation).
 
 **Confidence**: High that VALUE semantics are unknown; high that the property-table hypothesis is currently failed, pending raw evidence archival.
 

@@ -4,6 +4,8 @@ Project-wide SLDPRT reverse-engineering knowledge. These entries are version-ind
 
 Source migrated from `v0.3.5/docs/research/KNOWN_INVARIANTS.md` and related experiment notes.
 
+**Corpus note (2026-06-27)**: The documented corpus count is 595 faces across 4 models. The v0.4.0 parser validates 593 of 595 faces (DEKOR 373/375). The 2-face discrepancy is under investigation. See EXP-011 and `knowledge/evidence/2026-06-27_v0.4.0-invariant-validation.md`.
+
 ---
 
 ## INV-001: Modern Geometry Is In `Contents/DisplayLists`
@@ -271,23 +273,25 @@ Those subclasses are retained only as descriptive range bins for old reports and
 
 **Status**: Observation
 
-**Evidence**: Today's reported measurements found that Block 1 section length follows:
+**Evidence**: Earlier measurements found that Block 1 section length follows:
 
 ```text
 len = 2 * loopSize - 2
 ```
 
-across the measured corpus. This records only an observed length relationship. It does not establish what the section values mean.
+across the measured corpus. This records the first-time observation prior to formula verification.
 
-**Files tested**: Today's measured corpus; exact file list not yet archived in project-wide evidence.
+This observation has since been verified as INV-017 (Verified Structural Invariant) across 593/593 faces in EXP-011. INV-012 remains as the historical observation record.
 
-**Faces/models tested**: Today's measured corpus; exact face/model count not yet archived in project-wide evidence.
+**Files tested**: v0.4.0 corpus: BOTTOM, TOP, GEAR, DEKOR. (593 of 595 faces validated.)
 
-**Confidence**: High for the reported measured corpus, pending raw evidence archival.
+**Faces/models tested**: 593/595 faces across 4 models. 2-face discrepancy under investigation.
+
+**Confidence**: High — verified by INV-017.
 
 **Date last updated**: 2026-06-27
 
-**Related experiments**: EXP-009
+**Related experiments**: EXP-009, EXP-011; formal verification in INV-017
 
 ---
 
@@ -343,4 +347,72 @@ across the measured corpus. This records only an observed length relationship. I
 
 **Related experiments**: EXP-008
 
+---
 
+## INV-016: Block 1 Body Length
+
+**Status**: Verified Structural Invariant
+
+**Evidence**: Block 1 body length (in u32s) follows:
+
+```text
+b1len = 2 * (vertexCount - sectionCount)
+```
+
+where `sectionCount` is the number of ONE-delimited sections in the Block 1 body.
+
+**Files tested**: `USB hub case BOTTOM.SLDPRT`, `USB hub case TOP.SLDPRT`, `Helical Bevel Gear.SLDPRT`, `Dekor.SLDPRT`
+
+**Faces/models tested**: 593/595 faces across 4 models (2-face discrepancy under investigation).
+
+**Confidence**: High — 593/593 validated faces pass (100%).
+
+**Date last updated**: 2026-06-27
+
+**Related experiments**: EXP-011
+
+---
+
+## INV-017: ONE-Delimited Section Length
+
+**Status**: Verified Structural Invariant
+
+**Evidence**: For every ONE-delimited section in Block 1, the number of body tokens equals the decoded loop entry minus 1:
+
+```text
+sectionBodyTokenCount = Block2[i] - 1
+```
+
+This formula is equivalent to the earlier observed relation `len = 2 * loopSize - 2` (INV-012). Each section body length corresponds to a single Block 2 loop entry.
+
+**Files tested**: `USB hub case BOTTOM.SLDPRT`, `USB hub case TOP.SLDPRT`, `Helical Bevel Gear.SLDPRT`, `Dekor.SLDPRT`
+
+**Faces/models tested**: 593/595 faces across 4 models (2-face discrepancy under investigation).
+
+**Confidence**: High — 593/593 validated faces pass (100%).
+
+**Date last updated**: 2026-06-27
+
+**Related experiments**: EXP-011
+
+---
+
+## INV-018: Block 2 Sum
+
+**Status**: Verified Structural Invariant
+
+**Evidence**: The sum of all Block 2 body values equals the Block 1 body length:
+
+```text
+sum(Block2[i]) = b1len
+```
+
+**Files tested**: `USB hub case BOTTOM.SLDPRT`, `USB hub case TOP.SLDPRT`, `Helical Bevel Gear.SLDPRT`, `Dekor.SLDPRT`
+
+**Faces/models tested**: 593/595 faces across 4 models (2-face discrepancy under investigation).
+
+**Confidence**: High — 593/593 validated faces pass (100%).
+
+**Date last updated**: 2026-06-27
+
+**Related experiments**: EXP-011

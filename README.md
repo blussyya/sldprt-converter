@@ -1,265 +1,55 @@
-# SLDPRT Converter
+# SLDPRT Reverse-Engineering Research
 
-Convert SolidWorks `.sldprt` files to standard 3D formats (STL, OBJ, STEP) using a Node.js CLI. Extracts pre-tessellated mesh geometry from the SLDPRT binary format, with optional STEP validation to verify surface accuracy.
+This is a research project to recover the serialization grammar of the SolidWorks SLDPRT binary format — syntax before semantics, never guessing meanings.
 
-## Requirements
+This is **not** a production converter. The old converter code (`src/`, `test/`) was removed in v0.4.0 to focus purely on format research. The goal is to understand the format well enough to build a read-only parser.
 
-- **Node.js 18+** (tested on Node 20/22)
-- **npm** (comes with Node)
-- Windows, macOS, or Linux
-
-## Installation
-
-```bash
-# Clone the repo
-git clone https://github.com/blussyya/sldprt-converter.git
-cd sldprt-converter
-
-# Install dependencies
-npm install
-```
-
-That's it. Three commands. No build step, no compilation.
-
-## Quick Start
-
-### Convert a SLDPRT file to binary STL (most common)
-
-```bash
-node src/validate.js path/to/your-file.SLDPRT
-```
-
-This outputs `your-file_extracted_v1.stl` in the same directory as the input file. The output is auto-versioned (`_v1`, `_v2`, etc.) so you never overwrite previous exports.
-
-### Convert with STEP validation
-
-If you have a `.STEP` file for the same part, you can validate the extraction against it:
-
-```bash
-node src/validate.js path/to/your-file.SLDPRT path/to/your-file.STEP
-```
-
-This runs a surface-by-surface comparison and shows you exactly which faces match, which are warnings, and which failed.
-
-### Export as OBJ instead
-
-```bash
-node src/validate.js path/to/your-file.SLDPRT --format obj
-```
-
-### Export as text STL
-
-```bash
-node src/validate.js path/to/your-file.SLDPRT --format stl
-```
-
-## CLI Reference
-
-### `validate.js` — Extract + Validate + Export
-
-This is the main tool. It extracts the mesh, optionally validates against a STEP file, and exports the result.
-
-```
-node src/validate.js <input.sldprt> [input.STEP] [options]
-```
-
-**Options:**
-
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-f, --format <fmt>` | Output format: `binary-stl`, `stl`, `obj` | `binary-stl` |
-| `-o, --output <path>` | Custom output file path | Auto-generated |
-| `--tolerance <mm>` | Max distance for STEP face matching | `0.5` mm |
-| `-v, --verbose` | Show detailed parsing and matching logs | Off |
-
-**Examples:**
-
-```bash
-# Basic conversion — extracts mesh, writes binary STL
-node src/validate.js USB hub case BOTTOM.SLDPRT
-
-# Full validation pipeline — extract, compare against STEP, export STL
-node src/validate.js USB hub case BOTTOM.SLDPRT "USB hub case BOTTOM ORIGINAL.STEP"
-
-# Export as OBJ with custom output path
-node src/validate.js part.SLDPRT --format obj -o ./output/part.obj
-
-# Verbose mode for debugging extraction issues
-node src/validate.js part.SLDPRT -v
-
-# Tighter tolerance for STEP validation (stricter matching)
-node src/validate.js part.SLDPRT part.STEP --tolerance 0.1
-```
-
-### `sldprt-cli.js` — Simple Converter (no STEP validation)
-
-A lighter tool for quick conversions when you don't need STEP validation.
-
-```
-node src/sldprt-cli.js <input.sldprt> [options]
-```
-
-**Options:**
-
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-f, --format <fmt>` | Output format: `obj`, `stl`, `binary-stl` | `obj` |
-| `-o, --output <path>` | Custom output file path | Same name as input |
-| `--scale <factor>` | Scale factor | `1000` (meters → mm) |
-| `--info` | Show mesh info only, no output file | Off |
-| `--verbose` | Show detailed parsing logs | Off |
-| `-h, --help` | Show help | |
-
-**Examples:**
-
-```bash
-# Convert to OBJ (default) — outputs part.obj in mm
-node src/sldprt-cli.js part.SLDPRT
-
-# Convert to binary STL
-node src/sldprt-cli.js part.SLDPRT -f binary-stl
-
-# Custom output path
-node src/sldprt-cli.js part.SLDPRT -o ./exports/part.stl -f binary-stl
-
-# Output in meters instead of mm
-node src/sldprt-cli.js part.SLDPRT --scale 1
-
-# Just show mesh info (vertices, faces, dimensions)
-node src/sldprt-cli.js part.SLDPRT --info
-
-# Batch convert multiple files
-node src/sldprt-cli.js *.sldprt -f binary-stl
-```
-
-## Output Files
-
-Exported files are placed alongside the input file by default. Output is auto-versioned to prevent overwriting:
-
-```
-USB hub case BOTTOM_extracted_v1.stl
-USB hub case BOTTOM_extracted_v2.stl
-USB hub case BOTTOM_extracted_v3.stl
-...
-```
-
-## Supported Formats
-
-### Input
-
-| Format | Support Level |
-|--------|--------------|
-| `.SLDPRT` (SolidWorks 2015+) | Full — modern openswx format with zlib-compressed DisplayLists |
-| `.SLDPRT` (older versions) | Partial — OLE2 compound document format, some files supported |
-| `.STEP` / `.STP` (AP214) | Used for validation only (not conversion input) |
-
-### Output
-
-| Format | Description |
-|--------|-------------|
-| Binary STL (`.stl`) | Compact binary format, best for 3D printing and CAD import |
-| Text STL (`.stl`) | ASCII format, human-readable, larger file size |
-| OBJ (`.obj`) | Wavefront OBJ, widely supported by 3D viewers and renderers |
-| STEP (`.step`) | AP214 with deduplicated CARTESIAN_POINTs (~200KB) |
-
-## Research Project
-
-This repository is also a binary-format reverse-engineering research project. The goal is to recover the serialization grammar of the SLDPRT format well enough to build a read-only parser — syntax before semantics, never guessing meanings.
+## Knowledge Base
 
 The project-wide knowledge base is maintained under `knowledge/`:
-- `KNOWN_INVARIANTS.md` — verified structural properties demonstrated across the corpus
-- `EXPERIMENT_LOG.md` — ledger of every experiment with facts, hypotheses, and confidence
-- `FAILED_HYPOTHESES.md` — hypotheses that have been disproven
-- `OPEN_QUESTIONS.md` — broad unresolved questions
-- `NEXT_QUESTIONS.md` — concrete operational research queue
-- `EVIDENCE_PRESERVATION_POLICY.md` — rules for reproducible evidence
-- `evidence/` — archived raw outputs supporting every numerical claim
 
-Branch-local research notebooks are preserved under version directories (e.g., `v0.3.5/docs/research/`).
+| File | Purpose |
+|------|---------|
+| `KNOWN_INVARIANTS.md` | Verified structural properties demonstrated across the corpus |
+| `EXPERIMENT_LOG.md` | Ledger of every experiment with facts, hypotheses, and confidence |
+| `FAILED_HYPOTHESES.md` | Hypotheses that have been disproven |
+| `OPEN_QUESTIONS.md` | Broad unresolved questions |
+| `NEXT_QUESTIONS.md` | Concrete operational research queue |
+| `ASSUMPTIONS.md` | Working assumptions |
+| `FORMAT_TIMELINE.md` | Version and container observations |
+| `EVIDENCE_PRESERVATION_POLICY.md` | Rules for reproducible evidence |
+| `evidence/` | Archived raw experiment outputs |
+| `RESEARCH_DASHBOARD.md` | Current research posture |
 
-See `knowledge/RESEARCH_DASHBOARD.md` for the current research posture.
+## Research Versions
 
-## How It Works
+| Version | Description |
+|---------|-------------|
+| v0.3.5 | Evidence preservation policy, knowledge base restructuring, evidence archive |
+| v0.4.0 | Three verified structural invariants (I1/I2/I3), EXP-011, corpus analysis |
 
-SolidWorks SLDPRT files store pre-tessellated mesh data inside `DisplayLists` streams. The extraction pipeline:
-
-1. **Parse OLE2** compound document (or detect modern openswx format)
-2. **Find DisplayLists** stream by XOR-decoding stream names (key = byte 7)
-3. **Decompress** via pako (zlib inflate)
-4. **Read face topology**: each face has a header `u32(edgeCount) u32(12) u32(100) u32(2) u32(vertexCount)` followed by `float32[vertexCount × 3]` vertex data
-5. **Scale vertices** from meters to millimeters (×1000)
-6. **Reconstruct triangle strips** per face for export
-
-When a STEP file is provided, the tool also:
-
-7. **Parse STEP entities** — extract ADVANCED_FACE, EDGE_LOOP, VERTEX_POINT topology
-8. **Evaluate surface equations** — PLANE, CYLINDRICAL_SURFACE, CONICAL_SURFACE
-9. **Match each SLDPRT face** to its corresponding STEP face by vertex-surface distance
-10. **Report per-face accuracy** — match percentage, max distance, status (OK/WARN/FAIL)
-
-## Validation Output
-
-When run with a STEP file, the tool outputs a table like:
-
-```
-SLDPRT# | Verts | Area     | STEP#  | Type | Match% | MaxDist  | Status
---------|-------|----------|--------|------|--------|----------|--------
-  #  0 |     4 |    240.5 | #  53 | PLANE |  100%  |    0.000 | OK
-  #  4 |    75 |   8703.9 | #1000 | PLANE |  100%  |    0.000 | OK
-  # 11 |    14 |     23.3 | # 138 |  CYL |  100%  |    0.000 | OK
-  # 43 |    71 |    106.9 | #1064 |  CON |  100%  |    0.016 | OK
-```
-
-**Status meanings:**
-- **OK** — all vertices within tolerance (default 0.5mm) of the STEP surface
-- **WARN** — some vertices exceed tolerance but within 3× tolerance
-- **FAIL** — vertices significantly far from the expected surface
-- **MISS** — no matching STEP face found
+Each version directory (e.g., `v0.4.0/`) contains the research scripts and docs for that milestone.
 
 ## Project Structure
 
 ```
 sldprt-converter/
 ├── README.md
-├── package.json
-├── package-lock.json
 ├── LICENSE
 ├── .gitignore
-├── src/
-│   ├── validate.js          # Main CLI: extract + validate + export
-│   ├── sldprt-cli.js        # Simple converter (no STEP validation)
-│   ├── sldprt-extractor.js  # Core library: SLDPRT parsing + mesh extraction
-│   ├── step-parse.js        # STEP AP214 parser + surface evaluator
-│   ├── ole2-parser.js       # OLE2 compound document parser
-│   └── utils.js             # Shared math utilities (triangulation, etc.)
-├── test/                    # Test fixtures and test suite
 ├── knowledge/               # Project-wide research knowledge base
-│   ├── KNOWN_INVARIANTS.md  # Verified structural properties
-│   ├── EXPERIMENT_LOG.md    # Experiment ledger
-│   ├── FAILED_HYPOTHESES.md # Disproven hypotheses
-│   ├── RESEARCH_DASHBOARD.md# Current research posture
-│   ├── NEXT_QUESTIONS.md    # Concrete research queue
-│   ├── OPEN_QUESTIONS.md    # Broad unresolved questions
-│   ├── ASSUMPTIONS.md       # Working assumptions
-│   ├── FORMAT_TIMELINE.md   # Version and container observations
-│   ├── EVIDENCE_PRESERVATION_POLICY.md  # Rules for reproducible evidence
-│   └── evidence/            # Archived raw experiment outputs
-├── v0.3.5/                  # v0.3.5 research branch scripts and docs
-└── node_modules/            # Dependencies (earcut)
+│   ├── KNOWN_INVARIANTS.md
+│   ├── EXPERIMENT_LOG.md
+│   ├── FAILED_HYPOTHESES.md
+│   ├── RESEARCH_DASHBOARD.md
+│   ├── NEXT_QUESTIONS.md
+│   ├── OPEN_QUESTIONS.md
+│   ├── ASSUMPTIONS.md
+│   ├── FORMAT_TIMELINE.md
+│   ├── EVIDENCE_PRESERVATION_POLICY.md
+│   └── evidence/
+└── v0.4.0/                  # v0.4.0 research scripts and docs
 ```
-
-## Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| [earcut](https://www.npmjs.com/package/earcut) | Polygon triangulation with hole support |
-
-## Known Limitations
-
-- **Only pre-tessellated meshes** — SLDPRT files store display mesh, not B-Rep geometry. Surface equations are not readable from the binary format.
-- **Old format support** — Some very old SLDPRT files (SW2000 era) use non-standard compression that isn't fully supported.
-- **Strip-based triangulation** — Faces are exported as triangle strips from the SLDPRT display data. Some faces (especially PLANE faces with holes) may have overlapping triangles.
-- **No assembly support** — Only single-part `.SLDPRT` files. Assemblies (`.SLDASM`) are not supported.
 
 ## License
 

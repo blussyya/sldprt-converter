@@ -222,6 +222,8 @@ Source migrated from `v0.3.5/docs/research/FAILED_HYPOTHESES.md`.
 
 **Confidence**: High
 
+**Cross-reference**: INV-017 (Verified Structural Invariant) further confirms that Block 2 values encode per-loop size data via the decoding formula `(raw + 2) / 2`, consistent with the falsification of vertex-index interpretation.
+
 **Date last updated**: 2026-06-27
 
 ---
@@ -269,3 +271,5 @@ These observations return VALUE semantics to UNKNOWN. `VALUE` remains only an ob
 **Confidence**: High for rejecting the reported property-table hypothesis, pending raw evidence archival.
 
 **Date last updated**: 2026-06-27
+
+**Cross-reference**: EXP-011 records that section length alone does not uniquely determine token-class sequence across 3429 sections. This corpus statistic is consistent with — but does not prove — the falsification of uniform VALUE semantics.

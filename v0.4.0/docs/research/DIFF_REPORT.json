@@ -1,0 +1,3231 @@
+{
+  "phase1_intraFile": {
+    "pairs": 3741,
+    "zeroDiff": 0,
+    "nonZeroDiff": 3741,
+    "stats": {
+      "stable": 27317,
+      "changed": 35950,
+      "inserted": 172,
+      "deleted": 172
+    }
+  },
+  "phase2_interFile": {
+    "matches": 162,
+    "zeroDiff": 0,
+    "results": [
+      {
+        "fileA": "BOTTOM",
+        "faceA": 0,
+        "fileB": "TOP",
+        "faceB": 46,
+        "key": "4_4_6_1",
+        "geoDist": 0.013481546132916548,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 1,
+        "fileB": "TOP",
+        "faceB": 8,
+        "key": "4_4_6_1",
+        "geoDist": 0.006749999709427358,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 2,
+        "fileB": "TOP",
+        "faceB": 58,
+        "key": "4_4_6_1",
+        "geoDist": 0.01720297484821863,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 3,
+        "fileB": "TOP",
+        "faceB": 55,
+        "key": "4_4_6_1",
+        "geoDist": 0.032623425602092436,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 8,
+        "fileB": "TOP",
+        "faceB": 48,
+        "key": "4_4_6_1",
+        "geoDist": 0.011739511022586843,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 5,
+        "fileB": "TOP",
+        "faceB": 11,
+        "key": "212_5_342_41",
+        "geoDist": 0.03915797172860954,
+        "secsA": 41,
+        "secsB": 41,
+        "stable": 108,
+        "changed": 125,
+        "ins": 68,
+        "del": 68,
+        "b2Stable": 12,
+        "b2Changed": 29
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 11,
+        "fileB": "TOP",
+        "faceB": 17,
+        "key": "14_14_26_1",
+        "geoDist": 0.006749999709427357,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 11,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 14,
+        "fileB": "TOP",
+        "faceB": 19,
+        "key": "14_14_26_1",
+        "geoDist": 0.006749999709427357,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 24,
+        "changed": 1,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 15,
+        "fileB": "TOP",
+        "faceB": 42,
+        "key": "16_13_28_2",
+        "geoDist": 0.006749999709427357,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 16,
+        "fileB": "TOP",
+        "faceB": 40,
+        "key": "16_13_28_2",
+        "geoDist": 0.006749999709427357,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 17,
+        "fileB": "TOP",
+        "faceB": 41,
+        "key": "16_13_28_2",
+        "geoDist": 0.006749999709427357,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 18,
+        "fileB": "TOP",
+        "faceB": 43,
+        "key": "16_13_28_2",
+        "geoDist": 0.006749999709427357,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 19,
+        "fileB": "TOP",
+        "faceB": 34,
+        "key": "50_50_98_1",
+        "geoDist": 0.00957138968854043,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 20,
+        "fileB": "TOP",
+        "faceB": 34,
+        "key": "50_50_98_1",
+        "geoDist": 0.008192965495254263,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 21,
+        "fileB": "TOP",
+        "faceB": 32,
+        "key": "50_50_98_1",
+        "geoDist": 0.009571389801755347,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 22,
+        "fileB": "TOP",
+        "faceB": 32,
+        "key": "50_50_98_1",
+        "geoDist": 0.009198616896879069,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 23,
+        "fileB": "TOP",
+        "faceB": 30,
+        "key": "50_50_98_1",
+        "geoDist": 0.009571389811671542,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 24,
+        "fileB": "TOP",
+        "faceB": 30,
+        "key": "50_50_98_1",
+        "geoDist": 0.008192965511241185,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 25,
+        "fileB": "TOP",
+        "faceB": 28,
+        "key": "50_50_98_1",
+        "geoDist": 0.009571389698456622,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 26,
+        "fileB": "TOP",
+        "faceB": 28,
+        "key": "50_50_98_1",
+        "geoDist": 0.00902787418485063,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 27,
+        "fileB": "TOP",
+        "faceB": 28,
+        "key": "50_50_98_1",
+        "geoDist": 0.009006240750866801,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 28,
+        "fileB": "TOP",
+        "faceB": 30,
+        "key": "50_50_98_1",
+        "geoDist": 0.009006240750625031,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 29,
+        "fileB": "TOP",
+        "faceB": 32,
+        "key": "50_50_98_1",
+        "geoDist": 0.009006240754339506,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 30,
+        "fileB": "TOP",
+        "faceB": 34,
+        "key": "50_50_98_1",
+        "geoDist": 0.009006240754581278,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 31,
+        "fileB": "TOP",
+        "faceB": 28,
+        "key": "50_50_98_1",
+        "geoDist": 0.012063683267953894,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 32,
+        "fileB": "TOP",
+        "faceB": 30,
+        "key": "50_50_98_1",
+        "geoDist": 0.01206368327290352,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 33,
+        "fileB": "TOP",
+        "faceB": 34,
+        "key": "50_50_98_1",
+        "geoDist": 0.01206368325555354,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 34,
+        "fileB": "TOP",
+        "faceB": 32,
+        "key": "50_50_98_1",
+        "geoDist": 0.012063683260503172,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 0,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.09633790654718916,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 1,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.07826947981768262,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 2,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.09628125067652218,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 3,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.11319022167131768,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 8,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.0953289404338516,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 19,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11972927781662408,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 20,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11963025280886021,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 21,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11638612057216802,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 22,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.116742278159012,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 23,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.08607183847263672,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 24,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.08600691821225073,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 25,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.09052042377539869,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 26,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.09079161885824032,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 27,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.09043517572466657,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 28,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.08602479429899393,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 29,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.1163007357011247,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 30,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11962426732052642,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 31,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.09041166670157301,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 32,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.08596443205118094,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 33,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11964571678922574,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 34,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11630301108378135,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 0,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.35420237853420755,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 1,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.36741328900341635,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 2,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.33392466393403253,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 3,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3675030151095434,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 8,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.33536837604084185,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 11,
+        "fileB": "DEKOR",
+        "faceB": 140,
+        "key": "14_14_26_1",
+        "geoDist": 0.42514555946753435,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 11,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 14,
+        "fileB": "DEKOR",
+        "faceB": 140,
+        "key": "14_14_26_1",
+        "geoDist": 0.42496545252112633,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 11,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 15,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.05871962263251633,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 16,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.05833253662808723,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 17,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.11483685735020638,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "BOTTOM",
+        "faceA": 18,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.1151148195428721,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 3,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.09655750517970606,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 4,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.0925874251232909,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 8,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.07579088422089271,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 44,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.0862568181625104,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 45,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.09777465950379224,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 46,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.09360472285306683,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 47,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.10742373657351686,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 48,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.10349310101887513,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 49,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.07883949474825719,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 50,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.08764996051455504,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 53,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.10582913902715382,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 54,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.1047899537848721,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 55,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.10631727821099723,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 58,
+        "fileB": "GEAR",
+        "faceB": 61,
+        "key": "4_4_6_1",
+        "geoDist": 0.09378991665217982,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 21,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.12126882412607573,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 23,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11820708188393496,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 25,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.08836106841181587,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 27,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.09301530431864774,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 28,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.09161889832026365,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 30,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.08726281947416567,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 32,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.11723187001948597,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 34,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.12053151111903734,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 37,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.09350614656448776,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 39,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.10311548008669318,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 51,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.10245005458135076,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 52,
+        "fileB": "GEAR",
+        "faceB": 112,
+        "key": "50_50_98_1",
+        "geoDist": 0.0930652252253002,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 49,
+        "changed": 48,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 3,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3342204974539102,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 4,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3342134627672999,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 8,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3677543173296905,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 44,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3482032655259595,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 45,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.34822244540569175,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 46,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.35099437267919176,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 47,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.334978923931896,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 48,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3343403880903275,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 49,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.33492914251181527,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 50,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3343119727306859,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 53,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3520214062209599,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 54,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.36198643456985413,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 55,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.35671926533573556,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 58,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.33432735167316985,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 7,
+        "fileB": "DEKOR",
+        "faceB": 37,
+        "key": "8_8_14_1",
+        "geoDist": 0.5328394697736214,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 5,
+        "changed": 8,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 9,
+        "fileB": "DEKOR",
+        "faceB": 37,
+        "key": "8_8_14_1",
+        "geoDist": 0.5156813694095459,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 5,
+        "changed": 8,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 17,
+        "fileB": "DEKOR",
+        "faceB": 140,
+        "key": "14_14_26_1",
+        "geoDist": 0.43171712292693637,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 11,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 19,
+        "fileB": "DEKOR",
+        "faceB": 140,
+        "key": "14_14_26_1",
+        "geoDist": 0.43153895619945143,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 11,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 40,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.055368007623517075,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 41,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.1134156965810095,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 42,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.05584861066281523,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "TOP",
+        "faceA": 43,
+        "fileB": "DEKOR",
+        "faceB": 331,
+        "key": "16_13_28_2",
+        "geoDist": 0.1137081940772378,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 12,
+        "changed": 14,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 5,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.12203128589324311,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 56,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.11789235418378834,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 3,
+        "changed": 7,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 65,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.10618196641167649,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 69,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.11172183800070237,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 73,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.11442619381586917,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 77,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.11447114182621741,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 81,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.1103420102673566,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 85,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.10478978955596427,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 89,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.09644574526215086,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 93,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.08904602469958352,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 97,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.08338500456468187,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 101,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.08107719813870981,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 105,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.08448662579315445,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 109,
+        "fileB": "DEKOR",
+        "faceB": 355,
+        "key": "8_5_12_2",
+        "geoDist": 0.08989305432910452,
+        "secsA": 2,
+        "secsB": 2,
+        "stable": 4,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 2,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 57,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3773788820522353,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 60,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.38553680967968174,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 61,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3707253624394371,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 62,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3633178252386977,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 63,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.36294825483036486,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 64,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3677160705895966,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 66,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3608767609163033,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 67,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.35790809029996973,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 68,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3609106238815628,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 70,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.36752847906243946,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 71,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.36279030288383257,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 72,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3632025798112976,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 74,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3813162774592629,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 75,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.3761100464286624,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 76,
+        "fileB": "DEKOR",
+        "faceB": 137,
+        "key": "4_4_6_1",
+        "geoDist": 0.37388334643198734,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 78,
+        "fileB": "DEKOR",
+        "faceB": 139,
+        "key": "4_4_6_1",
+        "geoDist": 0.38422289174356244,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 79,
+        "fileB": "DEKOR",
+        "faceB": 139,
+        "key": "4_4_6_1",
+        "geoDist": 0.3801753165307032,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 80,
+        "fileB": "DEKOR",
+        "faceB": 139,
+        "key": "4_4_6_1",
+        "geoDist": 0.38186379317686897,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 82,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.387719320369842,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 83,
+        "fileB": "DEKOR",
+        "faceB": 139,
+        "key": "4_4_6_1",
+        "geoDist": 0.3898559334364082,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 84,
+        "fileB": "DEKOR",
+        "faceB": 139,
+        "key": "4_4_6_1",
+        "geoDist": 0.38883975432856244,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 86,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3702105820013639,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 87,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.37399371187178077,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 88,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.37873563393837206,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 90,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3551860240320019,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 91,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.35672138224108363,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 92,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.36196156717363237,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 94,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.34660985337252354,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 95,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3454156955515575,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 96,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.349789629367418,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 98,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.34697706312265086,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 99,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3433394959596958,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 100,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.345616581318695,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 102,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3561776047370993,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 103,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.35112501803822316,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 104,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.35068809508870163,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 106,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.37155052697568386,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 107,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.36645283646422444,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 108,
+        "fileB": "DEKOR",
+        "faceB": 52,
+        "key": "4_4_6_1",
+        "geoDist": 0.3634924457174236,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 1,
+        "changed": 4,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      },
+      {
+        "fileA": "GEAR",
+        "faceA": 58,
+        "fileB": "DEKOR",
+        "faceB": 241,
+        "key": "6_6_10_1",
+        "geoDist": 0.4297411490460774,
+        "secsA": 1,
+        "secsB": 1,
+        "stable": 3,
+        "changed": 6,
+        "ins": 0,
+        "del": 0,
+        "b2Stable": 1,
+        "b2Changed": 0
+      }
+    ]
+  },
+  "phase3_valueStability": {
+    "positionTracks": 1067,
+    "alwaysStable": 462,
+    "sometimesChanged": 230,
+    "alwaysChanged": 375,
+    "medianChangeRate": 0.5
+  },
+  "phase4_diffPatterns": {
+    "changedSections": 6065,
+    "patterns": [
+      [
+        "VZV→VZV",
+        1869
+      ],
+      [
+        "VVZVV→VVZVV",
+        1545
+      ],
+      [
+        "ZVZVZVV→ZVZVZVV",
+        672
+      ],
+      [
+        "ZVZVZVZVZVV→ZVZVZVZVZVV",
+        406
+      ],
+      [
+        "VVZVZVZVZZV→ZVZVZVZVZVV",
+        227
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        189
+      ],
+      [
+        "ZVZVZVZVZVV→VVZVZVZVZZV",
+        152
+      ],
+      [
+        "VVZVZVZVZZV→VVZVZVZVZZV",
+        91
+      ],
+      [
+        "VZZVZVZ→VZZVZVZ",
+        78
+      ],
+      [
+        "ZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVV",
+        66
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        66
+      ],
+      [
+        "VVZVZVZ→VVZVZVZ",
+        60
+      ],
+      [
+        "VZZVZZV→VZZVZZV",
+        48
+      ],
+      [
+        "VZZVZVZVZVV→VZZVZVZVZVV",
+        37
+      ],
+      [
+        "ZVZVZVZVZZV→ZVZVZVZVZZV",
+        35
+      ],
+      [
+        "ZVZVZVZ→ZVZVZVZ",
+        31
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        28
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVV",
+        27
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        21
+      ],
+      [
+        "VZZVV→VZZVV",
+        21
+      ],
+      [
+        "VZZVZVZVZVZVZZV→VZZVZVZVZVZVZZV",
+        18
+      ],
+      [
+        "ZVZVZVZZV→ZVZVZVZZV",
+        18
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVV→VVZVZVZVZVZVZVZVZZV",
+        17
+      ],
+      [
+        "ZZV→ZZV",
+        15
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        15
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        15
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        15
+      ],
+      [
+        "VVZVZVZVZZV→VZZVZVZVZVV",
+        14
+      ],
+      [
+        "VVZVZVZVZVZVZVZVZZV→VVZVZVZVZVZVZVZVZZV",
+        13
+      ],
+      [
+        "VVZZZVV→ZVZVZVV",
+        12
+      ],
+      [
+        "VZZVZVZVZVV→VVZVZVZVZZV",
+        11
+      ],
+      [
+        "ZVZVZVV→VVZVZVZ",
+        10
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVV",
+        10
+      ],
+      [
+        "VVZVZVZ→ZVZVZVV",
+        9
+      ],
+      [
+        "VZZVZZZVZZV→VZZVZZZVZZV",
+        8
+      ],
+      [
+        "VVZVZVZVZVZVZVZVZZV→ZVZVZVZVZVZVZVZVZVV",
+        8
+      ],
+      [
+        "VZZVZVZVZZV→VZZVZVZVZZV",
+        6
+      ],
+      [
+        "VZZVZZZVZZZVZZV→VZZVZZZVZZZVZZV",
+        5
+      ],
+      [
+        "VZZVV→VZV",
+        5
+      ],
+      [
+        "VZZVZVZVZVZVZVV→VZZVZVZVZVZVZVV",
+        5
+      ],
+      [
+        "VZZ→VZZ",
+        4
+      ],
+      [
+        "ZVZZZVV→ZVZZZVV",
+        4
+      ],
+      [
+        "ZVZVZVZVZZV→VZZVZVZVZVV",
+        4
+      ],
+      [
+        "ZVZVZVZ→VZV",
+        4
+      ],
+      [
+        "VVZVZVZVZZV→ZVZVZVZVZZV",
+        4
+      ],
+      [
+        "VVZVZVZVZVZVZVZVZVZVZVZVV→VVZVZVZVZVZVZVZVZVZVZVZVV",
+        3
+      ],
+      [
+        "ZVZVZVZVZVZ→ZVZVZVZVZVZ",
+        3
+      ],
+      [
+        "VVZZV→VVZZV",
+        3
+      ],
+      [
+        "ZZZVZZV→ZZZVZZV",
+        3
+      ],
+      [
+        "VVZVZVZVZVZVZVZ→VVZVZVZVZVZVZZV",
+        3
+      ],
+      [
+        "VZV→VZZVV",
+        3
+      ],
+      [
+        "VZV→ZVZVZVZ",
+        3
+      ],
+      [
+        "ZVZVZVZVZZV→VVZVZVZVZZV",
+        3
+      ],
+      [
+        "ZVZVZVZ→ZVZVZVZVZVZVZVZ",
+        3
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        3
+      ],
+      [
+        "ZVZVZVZ→VVZVZVZVZZV",
+        3
+      ],
+      [
+        "VZZVZVZVZVV→ZVZVZVZVZZV",
+        3
+      ],
+      [
+        "ZZV→VZV",
+        3
+      ],
+      [
+        "VVZVZVZVZVZVZVZVV→VVZVZVZVZVZVZVZVV",
+        3
+      ],
+      [
+        "ZVZ→ZVZ",
+        2
+      ],
+      [
+        "VVZVZZV→VVZVZZV",
+        2
+      ],
+      [
+        "ZVZVZZV→ZVZVZZV",
+        2
+      ],
+      [
+        "ZZZZZZV→ZZZZZZV",
+        2
+      ],
+      [
+        "VZV→ZVZVZVZVZVZVZVZ",
+        2
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZ→ZVZVZVZ",
+        2
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVV→VVZVZVZVZVZVZVZVZZV",
+        2
+      ],
+      [
+        "VZV→ZZV",
+        2
+      ],
+      [
+        "ZVZVZVZ→ZVZVZVZVZVZ",
+        2
+      ],
+      [
+        "VZV→VVZVZVZ",
+        2
+      ],
+      [
+        "VZZVV→ZZV",
+        2
+      ],
+      [
+        "VZZVZVZVZ→ZVZVZVZ",
+        2
+      ],
+      [
+        "VZZVZ→VZZVZVZ",
+        1
+      ],
+      [
+        "VZZVZZV→VZZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVV→VZZVZVV",
+        1
+      ],
+      [
+        "VZZVZVZVZZZVZVZVZ→VZZVZZZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZ→ZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZZZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZZZVV",
+        1
+      ],
+      [
+        "VVZVZZZZV→VVZVZZZZV",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVV→VVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "VVZVZVZ→VVZVZVZZV",
+        1
+      ],
+      [
+        "VZZVZVZVZZV→ZVZVZZV",
+        1
+      ],
+      [
+        "VZV→VVZVZ",
+        1
+      ],
+      [
+        "ZVZVZZV→VZZVZZV",
+        1
+      ],
+      [
+        "ZVZVZVV→VVZZZVV",
+        1
+      ],
+      [
+        "VVZVZVZVZVV→VVZVZVZVZVV",
+        1
+      ],
+      [
+        "VZZ→ZZZ",
+        1
+      ],
+      [
+        "VZZZZZZZV→ZZZVZZV",
+        1
+      ],
+      [
+        "ZVZZZVZZZVZZV→ZVZZZVZ",
+        1
+      ],
+      [
+        "VZZ→ZZZZZZV",
+        1
+      ],
+      [
+        "VZZZZ→VZZ",
+        1
+      ],
+      [
+        "VZZZZZZZV→VZZVZZZVZZZVZZV",
+        1
+      ],
+      [
+        "VZZVZZZVZZZ→VZZVZZZVZZZ",
+        1
+      ],
+      [
+        "ZZZVZ→ZZZVZ",
+        1
+      ],
+      [
+        "VZZZZZZZV→VZZZZZZZV",
+        1
+      ],
+      [
+        "ZVZZZVZ→ZVZZZVZ",
+        1
+      ],
+      [
+        "VVZZZVZZV→VVZZZVZZV",
+        1
+      ],
+      [
+        "ZZV→VZZ",
+        1
+      ],
+      [
+        "ZZZ→ZZV",
+        1
+      ],
+      [
+        "ZZV→ZZZ",
+        1
+      ],
+      [
+        "ZZZVZZZ→ZVZZZVZ",
+        1
+      ],
+      [
+        "ZZZ→VZZVZZZVZZZ",
+        1
+      ],
+      [
+        "VVZZZVZZZVZZV→VVZZZVZZZ",
+        1
+      ],
+      [
+        "VZZVZZZVZZZVZZV→ZZZVZZZVZVV",
+        1
+      ],
+      [
+        "VVZVZZZVZZV→ZVZZZVZZZVV",
+        1
+      ],
+      [
+        "VZZVZZZVZZZVZZZVZZV→VZZVZZZVZZZVZZZVZZV",
+        1
+      ],
+      [
+        "VVZVZVZVZVZ→VZV",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZ→ZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZVZ→ZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZVZ→VVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZZV→ZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZZV→VVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZZV→VVZVZVZVZVZVZZV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVV→VVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVV→VVZVZVZVZVZVZZV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZ→ZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZ→ZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZ→ZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZVZVZZV→VZZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZ→ZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZ→VVZVZVZVZZV",
+        1
+      ],
+      [
+        "ZVZVZVZ→ZZV",
+        1
+      ],
+      [
+        "VVZVZVZVZZV→ZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVV→VVZVZVZVZVZVZVZVZVZVZZV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZ→ZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZVZVZZV→ZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZVZVZVZVZVZVZVZVZVZVZVV→VVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZ→VVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVV→VZZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZ→VZZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZVV→VVZVZVZVV",
+        1
+      ],
+      [
+        "VZZVZVZVZ→ZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VVZVZVZVZZV→VZV",
+        1
+      ],
+      [
+        "VZV→VVZVZVZVZZV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZ→ZVZVZVZ",
+        1
+      ],
+      [
+        "ZVZVZVZ→ZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ→VZZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZ",
+        1
+      ],
+      [
+        "VZZVZVZVZVZVZVZVZVV→VZZVZVZVZVZVZVZVZVV",
+        1
+      ],
+      [
+        "ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV→ZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVZVV",
+        1
+      ]
+    ]
+  }
+}

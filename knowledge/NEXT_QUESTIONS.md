@@ -60,11 +60,13 @@ Statuses:
 
 ## NQ-002A: Does `len = 2 * loopSize - 2` Hold Across The Full Archived Corpus?
 
-**Status**: Active
+**Status**: Answered
 
-**Depends on**: EXP-004, EXP-009
+**Depends on**: EXP-004, EXP-009, EXP-011
 
-**If answered**: Converts today's reported measurement into archived project-wide evidence with exact corpus counts.
+**Answer**: This formula has been verified as INV-017 (Verified Structural Invariant). For every ONE-delimited section, `sectionBodyTokenCount = Block2[i] - 1`, which is equivalent to `len = 2 * loopSize - 2`. Verified across 593/593 validated faces (100%).
+
+**Evidence archive**: `knowledge/evidence/2026-06-27_v0.4.0-invariant-validation.md`
 
 **Will eliminate or constrain**: OQ-001, OQ-001A, OQ-002, ASM-003.
 
